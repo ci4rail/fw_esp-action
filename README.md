@@ -5,6 +5,7 @@ This Github action allows you to build and test ESP firmware images.
 ## Repo requirements
 In the repo using this actions you must have
 * `gitpod.yml` - The action extracts the build container out of it
+  * Must use gitpod-esp image
 * `fw-package.env`- The action extracts the project name out of it
 * `make-firmware-pkg.sh` - The action calls this script to generate the firmware package
 
