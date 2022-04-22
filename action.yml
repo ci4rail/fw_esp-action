@@ -7,7 +7,7 @@ inputs:
   device-name:
     description: "Device id as listed in test schedulers config file to run the test on test station"
     required: true
-  mqtt-broker-url:
+  teststation-broker-url:
     description: "IP:Port of MQTT broker where test station listens to"
     required: true
   master-topic:
@@ -98,7 +98,7 @@ runs:
       with:
         pipeline-name: "${{ github.repository }}"
         # This name is resolved by tailscale magic DNS
-        mqtt-broker-url: ${{ inputs.mqtt-broker-url}}
+        mqtt-broker-url: ${{ inputs.teststation-broker-url}}
         master-topic: ${{ inputs.master-topic}}
         test-name: ${{ inputs.test-name }}
         artifact-override: |

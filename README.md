@@ -51,24 +51,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Build and Test
-        uses: ci4rail/fw_esp-action@v1
+        uses: ci4rail/fw_esp-action@initial
         with:
           pipeline-name: "${{ github.repository }}"
+          device-name: "iou01_1"
           # This name is resolved by tailscale magic DNS
-          mqtt-broker-url: "lizard-rpi:1883"
+          teststation-broker-url: "lizard-rpi:1883"
           test-name: "iou01 all"
-          artifact-override: |
-            {
-              \"desired_versions.iou01_1.name\": \"${{ steps.identify.outputs.project }}\",
-              \"desired_versions.iou01_1.version\": \"${{ steps.build.outputs.version }}\",
-              \"desired_versions.iou01_1.source.type\": \"ci4rail-minio\",
-              \"desired_versions.iou01_1.source.bucket\": \"esp-fw-testing\",
-              \"desired_versions.iou01_1.source.filetype\": \"fwpkg\"
-            }
           access-token: ${{ secrets.FW_CI_TOKEN }}
           # must be a reusable, emphemeral key!
           tailscale-key: ${{ secrets.YODA_TAILSCALE_AUTHKEY }}
           minio-access-key: ${{ secrets.MINIO_ACCESS_KEY }}
           minio-secret-key: ${{ secrets.MINIO_SECRET_KEY }}
-
 ```
