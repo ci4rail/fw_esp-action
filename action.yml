@@ -4,18 +4,18 @@ inputs:
   pipeline-name:
     description: "A name identifying the calling pipeline"
     required: true
+  device-name:
+    description: "Device id as listed in test schedulers config file to run the test on test station"
+    required: true
   mqtt-broker-url:
     description: "IP:Port of MQTT broker where test station listens to"
     required: true
   master-topic:
-    description: "request is published to <master-topic>/request"
+    description: "teststation request is published to <master-topic>/request"
     required: false
     default: "teststation"
   test-name:
-    description: "Name of the test to execute (as listed in the schedulers config file)"
-    required: true
-  artifact-override:
-    description: "artifact to test"
+    description: "Name of the test to execute (must match an entry in the test schedulers config file)"
     required: true
   request-timeout:
     description: "Time in seconds to wait for teststation to become available"
@@ -99,11 +99,21 @@ runs:
         pipeline-name: "${{ github.repository }}"
         # This name is resolved by tailscale magic DNS
         mqtt-broker-url: ${{ inputs.mqtt-broker-url}}
+        master-topic: ${{ inputs.master-topic}}
         test-name: ${{ inputs.test-name }}
-        artifact-override: ${{ inputs.artifact-override }}
+        artifact-override: |
+          {
+            \"desired_versions.${{ inputs.device-name }}.name\": \"${{ steps.identify.outputs.project }}\",
+            \"desired_versions.${{ inputs.device-name }}.version\": \"${{ steps.build.outputs.version }}\",
+            \"desired_versions.${{ inputs.device-name }}.source.type\": \"ci4rail-minio\",
+            \"desired_versions.${{ inputs.device-name }}.source.bucket\": \"${{ inputs.minio-bucket }}\",
+            \"desired_versions.${{ inputs.device-name }}.source.filetype\": \"fwpkg\"
+          }
+        request-timeout: ${{ inputs.request-timeout }}
         access-token: ${{ inputs.access-token }}
         # must be a reusable, emphemeral key!
         tailscale-key: ${{ inputs.tailscale-key }}
+        requester-version: ${{ inputs.requester-version }}
 
     - name: Release
       uses: softprops/action-gh-release@v1
