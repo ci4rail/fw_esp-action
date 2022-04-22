@@ -77,7 +77,7 @@ runs:
           build_cmd="${build_cmd} && idf.py dfu"
         fi
 
-        docker run -v $(pwd):/src ${gitpod_image} bash -c ${build_cmd}
+        docker run -v $(pwd):/src ${gitpod_image} bash -c "${build_cmd}"
 
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
