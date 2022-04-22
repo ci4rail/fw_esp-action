@@ -81,8 +81,9 @@ runs:
 
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
+        project=${{ steps.identify.outputs.project }}
         fwfile=${project}-${version}.bin
-        cp build/${{ steps.identify.outputs.project }}.bin build/${fwfile}
+        cp build/${project}.bin build/${fwfile}
 
         dfu_file=""
         if [ "${build_dfu}" = "true" ]; then
@@ -140,5 +141,5 @@ runs:
       with:
         files: |
           build/${{ steps.build.outputs.fwfile }}
-          build/${{ steps.build.outputs.dfu_file }}
+          ${{ steps.build.outputs.dfu_file }}
           ${{ steps.fwpkg.outputs.fwpkg }}
