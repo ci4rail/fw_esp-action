@@ -72,7 +72,7 @@ runs:
         sudo chown -R 33333 .
         build_cmd = "source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
 
-        if [ "${{inputs.build-dfu" = "true" ]; then
+        if [ "${{ inputs.build-dfu }}" = "true" ]; then
           build_cmd="${build_cmd} && idf.py dfu"
         fi
 
@@ -84,7 +84,7 @@ runs:
         cp build/${{ steps.identify.outputs.project }}.bin build/${fwfile}
 
         dfu_file=""
-        if [ "${{inputs.build-dfu" = "true" ]; then
+        if [ "${{ inputs.build-dfu" }} = "true" ]; then
           dfu_file="build/${fwfile}.dfu.bin"
           cp build/dfu.bin ${dfu_file}
         fi
