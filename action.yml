@@ -41,6 +41,10 @@ inputs:
   minio-secret-key:
     description: "Secret key for minio"
     required: true
+  build-dfu:
+    description: "Whether to build&release dfu binary"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -66,14 +70,27 @@ runs:
       run: |
         gitpod_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
         sudo chown -R 33333 .
-        docker run -v $(pwd):/src ${gitpod_image} bash -c "source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build && idf.py dfu"
+        build_cmd = "source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
+
+        if [ "${{inputs.build-dfu" = "true" ]; then
+          build_cmd="${build_cmd} && idf.py dfu"
+        fi
+
+        docker run -v $(pwd):/src ${gitpod_image} bash -c ${build_cmd}
+
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
         fwfile=${project}-${version}.bin
         cp build/${{ steps.identify.outputs.project }}.bin build/${fwfile}
-        cp build/dfu.bin build/${fwfile}.dfu.bin
+
+        dfu_file=""
+        if [ "${{inputs.build-dfu" = "true" ]; then
+          dfu_file="build/${fwfile}.dfu.bin"
+          cp build/dfu.bin ${dfu_file}
+        fi
         echo "::set-output name=fwfile::${fwfile}"
         echo "::set-output name=version::${version}"
+        echo "::set-output name=dfu_file::${dfu_file}"
     - name: Package
       shell: bash
       id: fwpkg
@@ -122,5 +139,5 @@ runs:
       with:
         files: |
           build/${{ steps.build.outputs.fwfile }}
-          build/${{ steps.build.outputs.fwfile }}.dfu.bin
+          build/${{ steps.build.outputs.dfu_file }}
           ${{ steps.fwpkg.outputs.fwpkg }}
