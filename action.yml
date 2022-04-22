@@ -1,0 +1,116 @@
+name: "ESP Firmware CI Action"
+description: "Build and test ESP firware"
+inputs:
+  pipeline-name:
+    description: "A name identifying the calling pipeline"
+    required: true
+  mqtt-broker-url:
+    description: "IP:Port of MQTT broker where test station listens to"
+    required: true
+  master-topic:
+    description: "request is published to <master-topic>/request"
+    required: false
+    default: "teststation"
+  test-name:
+    description: "Name of the test to execute (as listed in the schedulers config file)"
+    required: true
+  artifact-override:
+    description: "artifact to test"
+    required: true
+  request-timeout:
+    description: "Time in seconds to wait for teststation to become available"
+    required: false
+    default: "3600"
+  access-token:
+    description: "Personal access token for private repos"
+    required: true
+  tailscale-key:
+    description: "a reusable & emphermeral yoda tailscale key"
+    required: true
+  requester-version:
+    description: "tag of requester to use"
+    required: false
+    default: "v1.0.0"
+  minio-bucket:
+    description: "bucket on minio to push test images to"
+    required: false
+    default: "esp-fw-testing"
+  minio-access-key:
+    description: "Access key for minio"
+    required: true
+  minio-secret-key:
+    description: "Secret key for minio"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+      with:
+        submodules: "true"
+        token: ${{ inputs.access-token }}
+    - name: Get project and filename
+      shell: bash
+      id: identify
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
+        echo "::set-output name=project::$(echo ${project})"
+    - name: Build firmware
+      shell: bash
+      id: build
+      # Build firmware using same docker image as used in gitpod to have exactly same environment as for local builds
+      # The chown -R 33333 ensures that the gitpod user in the gitpod-esp can access and create files in the repo
+      run: |
+        gitpod_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
+        sudo chown -R 33333 .
+        docker run -v $(pwd):/src ${gitpod_image} bash -c "source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build && idf.py dfu"
+        sudo chown -R runner .
+        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
+        fwfile=${project}-${version}.bin
+        cp build/${{ steps.identify.outputs.project }}.bin build/${fwfile}
+        cp build/dfu.bin build/${fwfile}.dfu.bin
+        echo "::set-output name=fwfile::${fwfile}"
+        echo "::set-output name=version::${version}"
+    - name: Package
+      shell: bash
+      id: fwpkg
+      run: |
+        ./make-firmware-pkg.sh
+        fwpkg=$(ls build/*.fwpkg)
+        echo "::set-output name=fwpkg::${fwpkg}"
+        mkdir -p minio
+        cp ${fwpkg} minio/
+    - name: Upload for testing
+      uses: hkdobrev/minio-deploy-action@v1
+      with:
+        endpoint: https://minio.ci4rail.com
+        access_key: ${{ inputs.minio-access-key }}
+        secret_key: ${{ inputs.minio-secret-key }}
+        bucket: ${{ inputs.minio-bucket }}
+        source_dir: minio
+        target_dir: "/"
+
+    - name: Test
+      uses: ci4rail/teststation-action@initial
+      with:
+        pipeline-name: "${{ github.repository }}"
+        # This name is resolved by tailscale magic DNS
+        mqtt-broker-url: ${{ inputs.mqtt-broker-url}}
+        test-name: ${{ inputs.test-name }}
+        artifact-override: ${{ inputs.artifact-override }}
+        access-token: ${{ inputs.access-token }}
+        # must be a reusable, emphemeral key!
+        tailscale-key: ${{ inputs.tailscale-key }}
+
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      # no release for pull-requests
+      if: startsWith(github.ref, 'refs/tags/')
+      with:
+        files: |
+          build/${{ steps.build.outputs.fwfile }}
+          build/${{ steps.build.outputs.fwfile }}.dfu.bin
+          ${{ steps.fwpkg.outputs.fwpkg }}
