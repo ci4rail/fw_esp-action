@@ -70,7 +70,7 @@ runs:
       run: |
         gitpod_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
         sudo chown -R 33333 .
-        build_cmd = "source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
+        build_cmd="source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
 
         build_dfu=${{ inputs.build-dfu }}
         if [ "${build_dfu}" = "true" ]; then
