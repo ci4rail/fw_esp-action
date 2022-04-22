@@ -84,7 +84,7 @@ runs:
         cp build/${{ steps.identify.outputs.project }}.bin build/${fwfile}
 
         dfu_file=""
-        if [ "${{ inputs.build-dfu" }} = "true" ]; then
+        if [ "${{ inputs.build-dfu" }}" = "true" ]; then
           dfu_file="build/${fwfile}.dfu.bin"
           cp build/dfu.bin ${dfu_file}
         fi
