@@ -113,7 +113,7 @@ runs:
         target_dir: "/"
 
     - name: Test
-      uses: ci4rail/teststation-action@initial
+      uses: ci4rail/teststation-action@v1
       with:
         pipeline-name: "${{ github.repository }}"
         # This name is resolved by tailscale magic DNS
