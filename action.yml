@@ -45,6 +45,10 @@ inputs:
     description: "Whether to build&release dfu binary"
     required: false
     default: "false"
+  skip-test:
+    description: "If set to true, don't attempt to test the image"
+    required: false
+    default: "false"
 
 runs:
   using: "composite"
@@ -52,7 +56,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
-        submodules: "true"
+        submodules: "recursive"
         token: ${{ inputs.access-token }}
     - name: Get project and filename
       shell: bash
@@ -114,6 +118,7 @@ runs:
 
     - name: Test
       uses: ci4rail/teststation-action@v1
+      if: inputs.skip-test == false
       with:
         pipeline-name: "${{ github.repository }}"
         # This name is resolved by tailscale magic DNS
