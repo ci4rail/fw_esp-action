@@ -56,7 +56,7 @@ runs:
     - name: Checkout repository
       uses: actions/checkout@v2
       with:
-        submodules: "true"
+        submodules: "recursive"
         token: ${{ inputs.access-token }}
     - name: Get project and filename
       shell: bash
