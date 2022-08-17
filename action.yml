@@ -115,8 +115,7 @@ runs:
         bucket: ${{ inputs.minio-bucket }}
         source_dir: minio
         target_dir: "/"
-        insecure: "true" // workaround for https://github.com/hkdobrev/minio-deploy-action/issues/2
-
+        insecure: "true"
     - name: Test
       uses: ci4rail/teststation-action@v1
       if: inputs.skip-test == false
