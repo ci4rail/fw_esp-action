@@ -117,7 +117,7 @@ runs:
         target_dir: "/"
         insecure: "true"
     - name: Test
-      uses: ci4rail/teststation-action@v1
+      uses: ci4rail/teststation-action@v4
       if: inputs.skip-test == false
       with:
         pipeline-name: "${{ github.repository }}"
