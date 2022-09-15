@@ -117,7 +117,7 @@ runs:
         target_dir: "/"
     - name: Test
       uses: ci4rail/teststation-action@v4
-      if: inputs.skip-test == false
+      if: inputs.skip-test == "false"
       with:
         pipeline-name: "${{ github.repository }}"
         # This name is resolved by tailscale magic DNS
