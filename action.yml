@@ -27,10 +27,6 @@ inputs:
   tailscale-key:
     description: "a reusable & emphermeral yoda tailscale key"
     required: true
-  requester-version:
-    description: "tag of requester to use"
-    required: false
-    default: "v1.2.0"
   minio-bucket:
     description: "bucket on minio to push test images to"
     required: false
@@ -136,7 +132,6 @@ runs:
         access-token: ${{ inputs.access-token }}
         # must be a reusable, emphemeral key!
         tailscale-key: ${{ inputs.tailscale-key }}
-        requester-version: ${{ inputs.requester-version }}
 
     - name: Release
       uses: softprops/action-gh-release@v1
