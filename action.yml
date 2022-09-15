@@ -107,7 +107,7 @@ runs:
         mkdir -p minio
         cp ${fwpkg} minio/
     - name: Upload for testing
-      uses: hkdobrev/minio-deploy-action@v1
+      uses: hkdobrev/minio-deploy-action@v1.1
       with:
         endpoint: https://minio.ci4rail.com
         access_key: ${{ inputs.minio-access-key }}
@@ -115,7 +115,6 @@ runs:
         bucket: ${{ inputs.minio-bucket }}
         source_dir: minio
         target_dir: "/"
-        insecure: "true"
     - name: Test
       uses: ci4rail/teststation-action@v4
       if: inputs.skip-test == false
