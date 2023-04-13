@@ -4,8 +4,11 @@ This Github action allows you to build and test ESP firmware images.
 
 ## Repo requirements
 In the repo using this actions you must have
-* `gitpod.yml` - The action extracts the build container out of it
-  * Must use gitpod-esp image
+* Either `devcontainer/devcontainer.json` or `gitpod.yml` - The action extracts the build container out of it
+  * devcontainer.json takes precedence over gitpod.yml
+  * In case of devcontainer.json, it must use `ci4rail/esp-idf*` image
+  * In case of gitpod.yml, it must use `ci4rail/gitpod-esp*` image
+  
 * `fw-package.env`- The action extracts the project name out of it
 * `make-firmware-pkg.sh` - The action calls this script to generate the firmware package
 
@@ -13,7 +16,7 @@ In the repo using this actions you must have
 
 This action can be used in push-tag and pull-request workflows. 
 
-### Behaviour in PR request workflows
+### Behavior in PR request workflows
 ```
 build firmware package
   V
@@ -22,7 +25,7 @@ push firmware package to minio
 Test firmware package from minio on test station
 ```
 
-### Behaviour in push-tag workflows
+### Behavior in push-tag workflows
 ```
 build firmware package
   V

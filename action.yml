@@ -50,7 +50,7 @@ runs:
   using: "composite"
   steps:
     - name: Checkout repository
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         submodules: "recursive"
         token: ${{ inputs.access-token }}
@@ -61,23 +61,33 @@ runs:
         EVENT_NAME: ${{ github.event_name }}
       run: |
         project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
-        echo "::set-output name=project::$(echo ${project})"
+        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
     - name: Build firmware
       shell: bash
       id: build
-      # Build firmware using same docker image as used in gitpod to have exactly same environment as for local builds
+      # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
       # The chown -R 33333 ensures that the gitpod user in the gitpod-esp can access and create files in the repo
       run: |
-        gitpod_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
-        sudo chown -R 33333 .
-        build_cmd="source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
+        if [ -f .devcontainer/devcontainer.json ]; then
+            builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
+            echo "devcontainer.json exists, builder image is $builder_image"
+            build_cmd="source /opt/esp/idf/export.sh && cd /src/ && idf.py build"
+        elif [ -f .gitpod.yml ]; then
+            builder_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
+            echo "gitpod.yml exists, builder image is $builder_image"
+            build_cmd="source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
+            sudo chown -R 33333 .
+        else
+            echo "No devcontainer.json or .gitpod.yml found, exiting"
+            exit 1
+        fi
 
         build_dfu=${{ inputs.build-dfu }}
         if [ "${build_dfu}" = "true" ]; then
           build_cmd="${build_cmd} && idf.py dfu"
         fi
 
-        docker run -v $(pwd):/src ${gitpod_image} bash -c "${build_cmd}"
+        docker run -v $(pwd):/src ${builder_image} bash -c "${build_cmd}"
 
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
@@ -90,16 +100,16 @@ runs:
           dfu_file="build/${fwfile}.dfu.bin"
           cp build/dfu.bin ${dfu_file}
         fi
-        echo "::set-output name=fwfile::${fwfile}"
-        echo "::set-output name=version::${version}"
-        echo "::set-output name=dfu_file::${dfu_file}"
+        echo "fwfile=${fwfile}" >> $GITHUB_OUTPUT
+        echo "version=${version}" >> $GITHUB_OUTPUT
+        echo "dfu_file=${dfu_file}" >> $GITHUB_OUTPUT
     - name: Package
       shell: bash
       id: fwpkg
       run: |
         ./make-firmware-pkg.sh
         fwpkg=$(ls build/*.fwpkg)
-        echo "::set-output name=fwpkg::${fwpkg}"
+        echo "fwpkg=${fwpkg}" >> $GITHUB_OUTPUT
         mkdir -p minio
         cp ${fwpkg} minio/
     - name: Upload for testing
