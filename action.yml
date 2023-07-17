@@ -72,6 +72,7 @@ runs:
             builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
             echo "devcontainer.json exists, builder image is $builder_image"
             build_cmd="source /opt/esp/idf/export.sh && cd /src/ && idf.py build"
+            git config --global --add safe.directory /src
         elif [ -f .gitpod.yml ]; then
             builder_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
             echo "gitpod.yml exists, builder image is $builder_image"
