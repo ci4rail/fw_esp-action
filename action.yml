@@ -42,7 +42,7 @@ inputs:
     required: false
     default: "false"
   build-merged:
-    description: "Whether to build&release merged binary"
+    description: "Whether to build&release merged binary. A merged binary is a single binary that contains the bootloader, partition table, and the application binary. This is useful for flashing the firmware using esptool.py"
     required: false
     default: "false"
   skip-test:
@@ -90,7 +90,7 @@ runs:
         if [ "${build_dfu}" = "true" ]; then
           build_cmd="${build_cmd} && idf.py dfu"
         fi
-        
+
         build_merged=${{ inputs.build-merged }}
         if [ "${build_merged}" = "true" ]; then
           append_cmd='(cd build && chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d\" -f2) && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)'
@@ -122,7 +122,7 @@ runs:
         echo "fwfile=${fwfile}" >> $GITHUB_OUTPUT
         echo "version=${version}" >> $GITHUB_OUTPUT
         echo "dfu_file=${dfu_file}" >> $GITHUB_OUTPUT
-        echo "merged_file=${dfu_file}" >> $GITHUB_OUTPUT
+        echo "merged_file=${merged_file}" >> $GITHUB_OUTPUT
     - name: Package
       shell: bash
       id: fwpkg
