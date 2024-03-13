@@ -93,7 +93,7 @@ runs:
         
         build_merged=${{ inputs.build-merged }}
         if [ "${build_merged}" = "true" ]; then
-          append_cmd='(cd build && chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d\'"\' -f2) && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)'
+          append_cmd='(cd build && chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d\" -f2) && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)'
           build_cmd="${build_cmd} && ${append_cmd}"
         fi
 
