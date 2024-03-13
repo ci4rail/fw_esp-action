@@ -172,4 +172,4 @@ runs:
           build/${{ steps.build.outputs.fwfile }}
           ${{ steps.build.outputs.dfu_file }}
           ${{ steps.fwpkg.outputs.fwpkg }}
-          ${{ steps.fwpkg.outputs.merged_file }}
+          ${{ steps.build.outputs.merged_file }}
