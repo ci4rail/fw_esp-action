@@ -90,12 +90,6 @@ runs:
         if [ "${build_dfu}" = "true" ]; then
           build_cmd="${build_cmd} && idf.py dfu"
         fi
-        
-        build_merged=${{ inputs.build-merged }}
-        if [ "${build_merged}" = "true" ]; then
-          chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d'"' -f2)
-          build_cmd="${build_cmd} && (cd build && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)"
-        fi
 
         build_merged=${{ inputs.build-merged }}
         if [ "${build_merged}" = "true" ]; then
