@@ -136,7 +136,7 @@ runs:
         dd if=/dev/zero of=build/esp32-firmware.dfu.bin bs=100k count=1
         dd if=/dev/zero of=build/esp32-firmware.merged.bin bs=100k count=1
         echo "fwfile=esp32-firmware.bin" >> $GITHUB_OUTPUT
-        echo "version=1.0.0" >> $GITHUB_OUTPUT
+        echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
         echo "dfu_file=build/esp32-firmware.dfu.bin" >> $GITHUB_OUTPUT
         echo "merged_file=build/esp32-firmware.merged.bin" >> $GITHUB_OUTPUT
 
