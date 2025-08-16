@@ -140,15 +140,15 @@ runs:
         echo "dfu_file=build/esp32-firmware.dfu.bin" >> $GITHUB_OUTPUT
         echo "merged_file=build/esp32-firmware.merged.bin" >> $GITHUB_OUTPUT
 
-    - name: Package
-      shell: bash
-      id: fwpkg
-      run: |
-        ./make-firmware-pkg.sh
-        fwpkg=$(ls build/*.fwpkg)
-        echo "fwpkg=${fwpkg}" >> $GITHUB_OUTPUT
-        mkdir -p minio
-        cp ${fwpkg} minio/
+    # - name: Package
+    #   shell: bash
+    #   id: fwpkg
+    #   run: |
+    #     ./make-firmware-pkg.sh
+    #     fwpkg=$(ls build/*.fwpkg)
+    #     echo "fwpkg=${fwpkg}" >> $GITHUB_OUTPUT
+    #     mkdir -p minio
+    #     cp ${fwpkg} minio/
     # - name: Upload for testing
     #   uses: hkdobrev/minio-deploy-action@v1.1
     #   with:
@@ -208,7 +208,6 @@ runs:
         gh release create -R ${repo} -F NOTES.md \
          build/${{ steps.build.outputs.fwfile }} \
            ${{ steps.build.outputs.dfu_file }} \
-           ${{ steps.fwpkg.outputs.fwpkg }} \
            ${{ steps.build.outputs.merged_file }}
       env:
         GH_TOKEN: ${{ inputs.access-token }}
