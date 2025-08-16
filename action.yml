@@ -49,6 +49,10 @@ inputs:
     description: "If set to true, don't attempt to test the image"
     required: false
     default: "false"
+  release-repo:
+    description: "The repository where the release should be created. If not set, the release will be created in the source repository."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
@@ -66,63 +70,76 @@ runs:
       run: |
         project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
         echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
-    - name: Build firmware
+    # - name: Build firmware
+    #   shell: bash
+    #   id: build
+    #   # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
+    #   # The chown -R 33333 ensures that the gitpod user in the gitpod-esp can access and create files in the repo
+    #   run: |
+    #     if [ -f .devcontainer/devcontainer.json ]; then
+    #         builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
+    #         echo "devcontainer.json exists, builder image is $builder_image"
+    #         build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && idf.py build"
+    #     elif [ -f .gitpod.yml ]; then
+    #         builder_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
+    #         echo "gitpod.yml exists, builder image is $builder_image"
+    #         build_cmd="source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
+    #         sudo chown -R 33333 .
+    #     else
+    #         echo "No devcontainer.json or .gitpod.yml found, exiting"
+    #         exit 1
+    #     fi
+
+    #     build_dfu=${{ inputs.build-dfu }}
+    #     if [ "${build_dfu}" = "true" ]; then
+    #       build_cmd="${build_cmd} && idf.py dfu"
+    #     fi
+
+    #     build_merged=${{ inputs.build-merged }}
+    #     if [ "${build_merged}" = "true" ]; then
+    #       append_cmd='(cd build && chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d\" -f2) && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)'
+    #       build_cmd="${build_cmd} && ${append_cmd}"
+    #     fi
+
+    #     echo "calling build container with command: ${build_cmd}"
+
+    #     docker run -v $(pwd):/src ${builder_image} bash -c "${build_cmd}"
+
+    #     sudo chown -R runner .
+    #     version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
+    #     project=${{ steps.identify.outputs.project }}
+    #     fwfile=${project}-${version}.bin
+    #     cp build/${project}.bin build/${fwfile}
+
+    #     dfu_file=""
+    #     if [ "${build_dfu}" = "true" ]; then
+    #       dfu_file="build/${fwfile}.dfu.bin"
+    #       cp build/dfu.bin ${dfu_file}
+    #     fi
+
+    #     merged_file=""
+    #     if [ "${build_merged}" = "true" ]; then
+    #       merged_file=${project}-${version}.merged.bin
+    #       cp build/merged-fw.bin ${merged_file}
+    #     fi
+
+    #     echo "fwfile=${fwfile}" >> $GITHUB_OUTPUT
+    #     echo "version=${version}" >> $GITHUB_OUTPUT
+    #     echo "dfu_file=${dfu_file}" >> $GITHUB_OUTPUT
+    #     echo "merged_file=${merged_file}" >> $GITHUB_OUTPUT
+    - name: dummybuild
       shell: bash
       id: build
-      # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
-      # The chown -R 33333 ensures that the gitpod user in the gitpod-esp can access and create files in the repo
       run: |
-        if [ -f .devcontainer/devcontainer.json ]; then
-            builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
-            echo "devcontainer.json exists, builder image is $builder_image"
-            build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && idf.py build"
-        elif [ -f .gitpod.yml ]; then
-            builder_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
-            echo "gitpod.yml exists, builder image is $builder_image"
-            build_cmd="source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
-            sudo chown -R 33333 .
-        else
-            echo "No devcontainer.json or .gitpod.yml found, exiting"
-            exit 1
-        fi
+        mkdir -p build
+        dd if=/dev/zero of=build/esp32-firmware.bin bs=100k count=1
+        dd if=/dev/zero of=build/esp32-firmware.dfu.bin bs=100k count=1
+        dd if=/dev/zero of=build/esp32-firmware.merged.bin bs=100k count=1
+        echo "fwfile=esp32-firmware.bin" >> $GITHUB_OUTPUT
+        echo "version=1.0.0" >> $GITHUB_OUTPUT
+        echo "dfu_file=build/esp32-firmware.dfu.bin" >> $GITHUB_OUTPUT
+        echo "merged_file=build/esp32-firmware.merged.bin" >> $GITHUB_OUTPUT
 
-        build_dfu=${{ inputs.build-dfu }}
-        if [ "${build_dfu}" = "true" ]; then
-          build_cmd="${build_cmd} && idf.py dfu"
-        fi
-
-        build_merged=${{ inputs.build-merged }}
-        if [ "${build_merged}" = "true" ]; then
-          append_cmd='(cd build && chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d\" -f2) && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)'
-          build_cmd="${build_cmd} && ${append_cmd}"
-        fi
-
-        echo "calling build container with command: ${build_cmd}"
-
-        docker run -v $(pwd):/src ${builder_image} bash -c "${build_cmd}"
-
-        sudo chown -R runner .
-        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
-        project=${{ steps.identify.outputs.project }}
-        fwfile=${project}-${version}.bin
-        cp build/${project}.bin build/${fwfile}
-
-        dfu_file=""
-        if [ "${build_dfu}" = "true" ]; then
-          dfu_file="build/${fwfile}.dfu.bin"
-          cp build/dfu.bin ${dfu_file}
-        fi
-
-        merged_file=""
-        if [ "${build_merged}" = "true" ]; then
-          merged_file=${project}-${version}.merged.bin
-          cp build/merged-fw.bin ${merged_file}
-        fi
-
-        echo "fwfile=${fwfile}" >> $GITHUB_OUTPUT
-        echo "version=${version}" >> $GITHUB_OUTPUT
-        echo "dfu_file=${dfu_file}" >> $GITHUB_OUTPUT
-        echo "merged_file=${merged_file}" >> $GITHUB_OUTPUT
     - name: Package
       shell: bash
       id: fwpkg
@@ -132,44 +149,66 @@ runs:
         echo "fwpkg=${fwpkg}" >> $GITHUB_OUTPUT
         mkdir -p minio
         cp ${fwpkg} minio/
-    - name: Upload for testing
-      uses: hkdobrev/minio-deploy-action@v1.1
-      with:
-        endpoint: https://minio.ci4rail.com
-        access_key: ${{ inputs.minio-access-key }}
-        secret_key: ${{ inputs.minio-secret-key }}
-        bucket: ${{ inputs.minio-bucket }}
-        source_dir: minio
-        target_dir: "/"
-    - name: Test
-      uses: ci4rail/teststation-action@v4
-      if: inputs.skip-test == 'false'
-      with:
-        pipeline-name: "${{ github.repository }}"
-        # This name is resolved by tailscale magic DNS
-        mqtt-broker-url: ${{ inputs.teststation-broker-url}}
-        master-topic: ${{ inputs.master-topic}}
-        test-name: ${{ inputs.test-name }}
-        artifact-override: |
-          {
-            \"desired_versions.${{ inputs.device-name }}.name\": \"${{ steps.identify.outputs.project }}\",
-            \"desired_versions.${{ inputs.device-name }}.version\": \"${{ steps.build.outputs.version }}\",
-            \"desired_versions.${{ inputs.device-name }}.source.type\": \"ci4rail-minio\",
-            \"desired_versions.${{ inputs.device-name }}.source.bucket\": \"${{ inputs.minio-bucket }}\",
-            \"desired_versions.${{ inputs.device-name }}.source.filetype\": \"fwpkg\"
-          }
-        request-timeout: ${{ inputs.request-timeout }}
-        access-token: ${{ inputs.access-token }}
-        # must be a reusable, emphemeral key!
-        tailscale-key: ${{ inputs.tailscale-key }}
+    # - name: Upload for testing
+    #   uses: hkdobrev/minio-deploy-action@v1.1
+    #   with:
+    #     endpoint: https://minio.ci4rail.com
+    #     access_key: ${{ inputs.minio-access-key }}
+    #     secret_key: ${{ inputs.minio-secret-key }}
+    #     bucket: ${{ inputs.minio-bucket }}
+    #     source_dir: minio
+    #     target_dir: "/"
+    # - name: Test
+    #   uses: ci4rail/teststation-action@v4
+    #   if: inputs.skip-test == 'false'
+    #   with:
+    #     pipeline-name: "${{ github.repository }}"
+    #     # This name is resolved by tailscale magic DNS
+    #     mqtt-broker-url: ${{ inputs.teststation-broker-url}}
+    #     master-topic: ${{ inputs.master-topic}}
+    #     test-name: ${{ inputs.test-name }}
+    #     artifact-override: |
+    #       {
+    #         \"desired_versions.${{ inputs.device-name }}.name\": \"${{ steps.identify.outputs.project }}\",
+    #         \"desired_versions.${{ inputs.device-name }}.version\": \"${{ steps.build.outputs.version }}\",
+    #         \"desired_versions.${{ inputs.device-name }}.source.type\": \"ci4rail-minio\",
+    #         \"desired_versions.${{ inputs.device-name }}.source.bucket\": \"${{ inputs.minio-bucket }}\",
+    #         \"desired_versions.${{ inputs.device-name }}.source.filetype\": \"fwpkg\"
+    #       }
+    #     request-timeout: ${{ inputs.request-timeout }}
+    #     access-token: ${{ inputs.access-token }}
+    #     # must be a reusable, emphemeral key!
+    #     tailscale-key: ${{ inputs.tailscale-key }}
 
-    - name: Release
-      uses: softprops/action-gh-release@v1
-      # no release for pull-requests
+
+    - name: Generate release notes in source repo
       if: startsWith(github.ref, 'refs/tags/')
-      with:
-        files: |
-          build/${{ steps.build.outputs.fwfile }}
-          ${{ steps.build.outputs.dfu_file }}
-          ${{ steps.fwpkg.outputs.fwpkg }}
-          ${{ steps.build.outputs.merged_file }}
+      shell: bash
+      id: notes
+      run: |
+        version=${{ steps.build.outputs.version }}
+        gh release create temp-notes-${version} --generate-notes --prerelease
+        gh release view temp-notes-${version} --json body -q .body > NOTES.md
+        gh release delete temp-notes-${version} -y
+        echo "Generated notes:"
+        head -20 NOTES.md
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Generate release in public repo
+      if: startsWith(github.ref, 'refs/tags/')
+      shell: bash
+      id: release
+      run: |
+        version=${{ steps.build.outputs.version }}
+        repo=${{ inputs.release-repo }}
+        if [ -z "${repo}" ]; then
+          repo=${{ github.repository }}
+        fi
+        gh release create -R ${repo} -F NOTES.md \
+         build/${{ steps.build.outputs.fwfile }} \
+           ${{ steps.build.outputs.dfu_file }} \
+           ${{ steps.fwpkg.outputs.fwpkg }} \
+           ${{ steps.build.outputs.merged_file }}
+      env:
+        GH_TOKEN: ${{ inputs.access-token }}
