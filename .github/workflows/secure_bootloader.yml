@@ -34,8 +34,11 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: ci4rail/fw_esp-action/build_bootloader
-      with:
-        repository: ci4rail/fw_esp-action
-        # this context is available in reusable workflows
-        ref: ${{ github.workflow_sha }}
+      # 1) Checkout the repo that hosts THIS reusable workflow at its commit
+      - uses: actions/checkout@v4
+        with:
+          repository: ci4rail/fw_esp-action
+          # this context is available in reusable workflows
+          ref: ${{ github.workflow_sha }}
+
+      - uses: ./actions/build_bootloader
