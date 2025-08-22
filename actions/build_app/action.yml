@@ -1,0 +1,92 @@
+name: "ESP Firmware Build Action"
+description: "Build ESP firware using the devcontainer used in the project"
+inputs:
+  build-dfu:
+    description: "Whether to build dfu binary"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: "recursive"
+        token: ${{ inputs.access-token }}
+    - name: Get project and filename
+      shell: bash
+      id: identify
+      env:
+        EVENT_NAME: ${{ github.event_name }}
+      run: |
+        project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
+        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
+    # - name: Build firmware
+    #   shell: bash
+    #   id: build
+    #   # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
+    #   # The chown -R 33333 ensures that the gitpod user in the gitpod-esp can access and create files in the repo
+    #   run: |
+    #     if [ -f .devcontainer/devcontainer.json ]; then
+    #         builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
+    #         echo "devcontainer.json exists, builder image is $builder_image"
+    #         build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && idf.py build"
+    #     elif [ -f .gitpod.yml ]; then
+    #         builder_image=$(grep gitpod-esp: .gitpod.yml | awk '{print $2}')
+    #         echo "gitpod.yml exists, builder image is $builder_image"
+    #         build_cmd="source /home/gitpod/esp/idf/export.sh && cd /src/ && idf.py build"
+    #         sudo chown -R 33333 .
+    #     else
+    #         echo "No devcontainer.json or .gitpod.yml found, exiting"
+    #         exit 1
+    #     fi
+
+    #     build_dfu=${{ inputs.build-dfu }}
+    #     if [ "${build_dfu}" = "true" ]; then
+    #       build_cmd="${build_cmd} && idf.py dfu"
+    #     fi
+
+    #     build_merged=${{ inputs.build-merged }}
+    #     if [ "${build_merged}" = "true" ]; then
+    #       append_cmd='(cd build && chip=$(grep CONFIG_IDF_TARGET= ../sdkconfig | cut -d\" -f2) && esptool.py --chip ${chip} merge_bin -o merged-fw.bin `cat flash_project_args`)'
+    #       build_cmd="${build_cmd} && ${append_cmd}"
+    #     fi
+
+    #     echo "calling build container with command: ${build_cmd}"
+
+    #     docker run -v $(pwd):/src ${builder_image} bash -c "${build_cmd}"
+
+    #     sudo chown -R runner .
+    #     version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
+    #     project=${{ steps.identify.outputs.project }}
+    #     fwfile=${project}-${version}.bin
+    #     cp build/${project}.bin build/${fwfile}
+
+    #     dfu_file=""
+    #     if [ "${build_dfu}" = "true" ]; then
+    #       dfu_file="build/${fwfile}.dfu.bin"
+    #       cp build/dfu.bin ${dfu_file}
+    #     fi
+
+    #     merged_file=""
+    #     if [ "${build_merged}" = "true" ]; then
+    #       merged_file=${project}-${version}.merged.bin
+    #       cp build/merged-fw.bin ${merged_file}
+    #     fi
+
+    #     echo "fwfile=${fwfile}" >> $GITHUB_OUTPUT
+    #     echo "version=${version}" >> $GITHUB_OUTPUT
+    #     echo "dfu_file=${dfu_file}" >> $GITHUB_OUTPUT
+    #     echo "merged_file=${merged_file}" >> $GITHUB_OUTPUT
+    - name: dummybuild
+      shell: bash
+      id: build
+      run: |
+        mkdir -p build
+        dd if=/dev/zero of=build/esp32-firmware.bin bs=100k count=1
+        dd if=/dev/zero of=build/esp32-firmware.dfu.bin bs=100k count=1
+        echo "fwfile=esp32-firmware.bin" >> $GITHUB_OUTPUT
+        echo "version=${GITHUB_REF_NAME}" >> $GITHUB_OUTPUT
+        echo "dfu_file=build/esp32-firmware.dfu.bin" >> $GITHUB_OUTPUT
+

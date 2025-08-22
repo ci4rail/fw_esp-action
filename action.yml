@@ -53,6 +53,14 @@ inputs:
     description: "The repository where the release should be created. If not set, the release will be created in the source repository."
     required: false
     default: ""
+  make-sbom:
+    description: "Whether to generate a Software Bill of Materials (SBOM) for the firmware. Makefile must have sbom.spdx rule"
+    required: false
+    default: "false"
+  cve-check:
+    description: "Whether to check the firmware for known vulnerabilities (CVEs). Makefile must have vulnerabilities_report.txt rule."
+    required: false 
+    default: "false"
 
 runs:
   using: "composite"
@@ -188,7 +196,7 @@ runs:
       run: |
         version=${{ steps.build.outputs.version }}
         gh release create temp-notes-${version} --generate-notes --prerelease
-        gh release view temp-notes-${version} --json body -q .body > NOTES.md
+        gh release view temp-notes-${version} --json body -q .body > RELNOTES.md
         gh release delete temp-notes-${version} -y
         echo "Generated notes:"
         head -20 NOTES.md
@@ -205,7 +213,7 @@ runs:
         if [ -z "${repo}" ]; then
           repo=${{ github.repository }}
         fi
-        gh release create -R ${repo} -F NOTES.md \
+        gh release create ${version} -R ${repo} -F RELNOTES.md \
          build/${{ steps.build.outputs.fwfile }} \
            ${{ steps.build.outputs.dfu_file }} \
            ${{ steps.build.outputs.merged_file }}

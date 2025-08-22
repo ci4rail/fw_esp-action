@@ -1,0 +1,34 @@
+
+APP:
+
+    build
+
+    sign (if secure, one key)
+
+    create fwpkg
+
+    put fw package to artifacts
+
+    test fwpkg
+
+    create sbom
+
+    create vulnerability report
+
+    create factory flashing file
+
+    create release
+
+    create release in public repo
+
+BOOTLOADER:
+
+    build
+
+    sign (if secure, up to three keys)
+
+    create sbom
+
+    create vulnerability report
+
+    create release

@@ -1,0 +1,13 @@
+name: "ESP Firmware Create Firmware Package Action"
+description: "Create a firmware package file. Build step must have been run before this action."
+
+runs:
+  using: "composite"
+  steps:
+    - name: Package
+      shell: bash
+      id: fwpkg
+      run: |
+        ./make-firmware-pkg.sh
+        fwpkg=$(ls build/*.fwpkg)
+        echo "fwpkg=${fwpkg}" >> $GITHUB_OUTPUT
