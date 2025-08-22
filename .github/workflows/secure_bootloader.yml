@@ -34,6 +34,4 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-    - uses: ci4rail/fw_esp-action/build_bootloader@${{ github.workflow_sha }}
-      with:
-        access-token: ${{ secrets.GITHUB_TOKEN }}
+    - uses: ci4rail/fw_esp-action/build_bootloader
