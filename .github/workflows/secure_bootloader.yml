@@ -1,46 +1,53 @@
 name: ESP32 Secure Bootloader Workflow
 
+
+permissions:
+  id-token: write   # required for OIDC
+  contents: read
+
+
 on:
   workflow_call:
-    # inputs:
-    #   firmware_signing_azure_subscription_id:
-    #     required: true
-    #     type: string
-    #   firmware_signing_azure_tenant_id:
-    #     required: true
-    #     type: string
-    #   firmware_signing_azure_app_id:
-    #     required: true
-    #     type: string
-    #   firmware_signing_azure_dev_vault_name:
-    #     required: true
-    #     type: string
-    #   firmware_signing_azure_prod_vault_name:
-    #     required: true
-    #     type: string
-    #   firmware_signing_azure_dev_key_id_base:
-    #     description: "The base ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
-    #     required: true
-    #     type: string
-    #   firmware_signing_azure_prod_key_id_base:
-    #     description: "The base ID for the production key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
-    #     required: true
-    #     type: string
-    #   num_signing_keys:
-    #     required: true
-    #     type: number
+    inputs:
+      firmware_signing_azure_subscription_id:
+        required: true
+        type: string
+      firmware_signing_azure_tenant_id:
+        required: true
+        type: string
+      firmware_signing_azure_app_id:
+        required: true
+        type: string
+      firmware_signing_azure_dev_key_id_base:
+        description: "The base ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
+        required: true
+        type: string
+      firmware_signing_azure_prod_key_id_base:
+        description: "The base ID for the production key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
+        required: true
+        type: string
+      num_signing_keys:
+        required: true
+        type: number
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: [self-hosted, linux, x64]
     steps:
     - name: Checkout repository
       uses: actions/checkout@v4
       with:
         submodules: "recursive"
         #token: ${{ inputs.access-token }}    
-    - uses: ci4rail/fw_esp-action/actions/build_bootloader@v10
+    - name: Build bootloader
+      uses: ci4rail/fw_esp-action/actions/build_bootloader@v10
+    - name: Sign bootloader
+      id: sign_bootloader
+      uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
       with:
-        repository: ci4rail/fw_esp-action
-        # this context is available in reusable workflows
-        ref: ${{ github.workflow_sha }}
+        binary: build/bootloader/bootloader.bin
+        azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+        azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+        azure_app_id: ${{ inputs.firmware_signing_azure_app_id }}
+        key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id_base }}
+        num_keys: ${{ inputs.num_signing_keys }}
