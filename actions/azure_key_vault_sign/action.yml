@@ -82,7 +82,7 @@ runs:
 
           # sign and verify signature
           # run in esp-idf container, as only there the espsecure.py is available
-          docker_cmd="cd /src && espsecure.py sign_data --version 2 \
+          docker_cmd="source /opt/esp/idf/export.sh && cd /src && espsecure.py sign_data --version 2 \
             --pub-key $(basename $KEY_ID)-pub.pem \
             --signature ${{ inputs.binary }}-signature-$i \
             $append_opt \
