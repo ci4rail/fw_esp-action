@@ -21,6 +21,7 @@ runs:
       id: build
       # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
       run: |
+        build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && make bootloader"
         echo "calling build container with command: ${build_cmd}"
 
         docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
