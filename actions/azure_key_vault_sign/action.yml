@@ -28,6 +28,17 @@ inputs:
 runs:
   using: "composite"
   steps:
+    # self-hosted runner currently doesn't have az cli installed...
+    - name: Install AZ CLI
+      shell: bash
+      run: |
+        if ! command -v az &> /dev/null; then
+            echo "Azure CLI not found. Installing..." >&2
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        else
+            echo "Azure CLI is already installed." >&2
+        fi
+
     - name: Azure OIDC login
       uses: azure/login@v2
       with:
@@ -46,6 +57,10 @@ runs:
       id: sign
       shell: bash
       run: |
+        # signing will be done in the .signed file
+        cp ${{ inputs.binary }} ${{ inputs.binary }}.signed
+        append_opt=""
+
         for i in {0..$(( {{ inputs.num_keys }} - 1 ))}; do
           KEY_ID="${{ inputs.key_id_base }}$i"
           SIG=$(az keyvault key sign \
@@ -61,4 +76,16 @@ runs:
 
           # download public key
           az keyvault key download --id "$KEY_ID" --file $(basename "$KEY_ID")-pub.pem
+
+          # sign
+          espsecure.py sign_data --version 2 \
+            --pub-key $(basename "$KEY_ID")-pub.pem \
+            --signature ${{ inputs.binary }}-signature-$i \
+            $append_opt \
+            -- "${{ inputs.binary }}.signed"
+          
+          # verify signature
+          espsecure.py verify_signature --version 2 --keyfile $(basename "$KEY_ID")-pub.pem "${{ inputs.binary }}.signed"
+
+          append_opt="--append_signatures"
         done
