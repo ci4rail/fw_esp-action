@@ -61,7 +61,7 @@ runs:
         cp ${{ inputs.binary }} ${{ inputs.binary }}.signed
         append_opt=""
 
-        for i in {0..$(( {{ inputs.num_keys }} - 1 ))}; do
+        for (( i=0; i<${{ inputs.num_keys }}; i++ )); do
           KEY_ID="${{ inputs.key_id_base }}$i"
           SIG=$(az keyvault key sign \
             --id "$KEY_ID" \
