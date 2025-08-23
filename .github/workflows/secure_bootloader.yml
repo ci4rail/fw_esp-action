@@ -1,10 +1,8 @@
 name: ESP32 Secure Bootloader Workflow
 
-
 permissions:
-  id-token: write   # required for OIDC
+  id-token: write # required for OIDC
   contents: read
-
 
 on:
   workflow_call:
@@ -30,20 +28,29 @@ jobs:
   build:
     runs-on: [self-hosted, linux, x64]
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v4
-      with:
-        submodules: "recursive"
-        #token: ${{ inputs.access-token }}    
-    - name: Build bootloader
-      uses: ci4rail/fw_esp-action/actions/build_bootloader@v10
-    - name: Sign bootloader
-      id: sign_bootloader
-      uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
-      with:
-        binary: build/bootloader/bootloader.bin
-        azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
-        azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
-        azure_app_id: ${{ inputs.firmware_signing_azure_app_id }}
-        key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id_base }}
-        num_keys: ${{ inputs.num_signing_keys }}
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          #token: ${{ inputs.access-token }}
+
+      - name: Get builder image
+        id: get_builder
+        uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
+
+      - name: Build bootloader
+        id: build_bootloader
+        uses: ci4rail/fw_esp-action/actions/build_bootloader@v10
+        with:
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+
+      - name: Sign bootloader
+        id: sign_bootloader
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          binary: ${{ steps.build_bootloader.outputs.bootloader-file }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ inputs.firmware_signing_azure_app_id }}
+          key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id_base }}
+          num_keys: ${{ inputs.num_signing_keys }}

@@ -1,10 +1,13 @@
 name: "ESP Firmware Build Bootloader Action"
 description: "Build ESP bootloader using the devcontainer used in the project"
+inputs:
+  builder-image:
+    description: "Docker image name"
+    required: true
 
 runs:
   using: "composite"
   steps:
-
     - name: Get project and filename
       shell: bash
       id: identify
@@ -18,17 +21,9 @@ runs:
       id: build
       # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
       run: |
-        if [ -f .devcontainer/devcontainer.json ]; then
-            builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
-            echo "devcontainer.json exists, builder image is $builder_image"
-            build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && make bootloader"
-        else
-            echo "No devcontainer.json found, exiting"
-            exit 1
-        fi
         echo "calling build container with command: ${build_cmd}"
 
-        docker run -v $(pwd):/src ${builder_image} bash -c "${build_cmd}"
+        docker run -v $(pwd):/src ${inputs.builder-image} bash -c "${build_cmd}"
 
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/bootloader/build.ninja)
@@ -36,3 +31,16 @@ runs:
         blfile=${project}-bootloader-${version}.bin
         cp build/bootloader/bootloader.bin build/${blfile}
 
+        echo "version=${version}" >> $GITHUB_OUTPUT
+        echo "bootloader-file=${blfile}" >> $GITHUB_OUTPUT
+        
+outputs:
+  project-name:
+    description: "Project name"
+    value: ${{ steps.identify.outputs.project }}
+  version:
+    description: "Bootloader version"
+    value: ${{ steps.build.outputs.version }}
+  bootloader-file:
+    description: "Bootloader file name"
+    value: ${{ steps.build.outputs.bootloader-file }}
