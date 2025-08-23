@@ -23,7 +23,7 @@ runs:
       run: |
         echo "calling build container with command: ${build_cmd}"
 
-        docker run -v $(pwd):/src ${inputs.builder-image} bash -c "${build_cmd}"
+        docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/bootloader/build.ninja)
@@ -33,7 +33,7 @@ runs:
 
         echo "version=${version}" >> $GITHUB_OUTPUT
         echo "bootloader-file=${blfile}" >> $GITHUB_OUTPUT
-        
+
 outputs:
   project-name:
     description: "Project name"
