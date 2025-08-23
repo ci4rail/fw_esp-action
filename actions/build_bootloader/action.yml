@@ -27,13 +27,13 @@ runs:
         docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
         sudo chown -R runner .
-        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/bootloader/build.ninja)
+        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
         project=${{ steps.identify.outputs.project }}
         blfile=${project}-bootloader-${version}.bin
-        cp build/bootloader/bootloader.bin build/${blfile}
+        cp build/bootloader/bootloader.bin build/bootloader/${blfile}
 
         echo "version=${version}" >> $GITHUB_OUTPUT
-        echo "bootloader-file=${blfile}" >> $GITHUB_OUTPUT
+        echo "bootloader-file=build/bootloader/${blfile}" >> $GITHUB_OUTPUT
 
 outputs:
   project-name:
