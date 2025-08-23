@@ -48,6 +48,7 @@ jobs:
         id: sign_bootloader
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
           binary: ${{ steps.build_bootloader.outputs.bootloader-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}

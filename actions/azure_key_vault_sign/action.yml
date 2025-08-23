@@ -6,6 +6,9 @@ description: |
   If <num_keys> is greater than 1, the output will have multiple signatures appended, 
   one for each key.
 inputs:
+  builder-image:
+    description: "Docker image name"
+    required: true
   binary:
     description: "The binary file (with path) to sign."
     required: true
@@ -78,11 +81,13 @@ runs:
           az keyvault key download --id "$KEY_ID" --file $(basename "$KEY_ID")-pub.pem
 
           # sign
-          espsecure.py sign_data --version 2 \
-            --pub-key $(basename "$KEY_ID")-pub.pem \
+          docker_cmd="cd /src && espsecure.py sign_data --version 2 \
+            --pub-key $(basename $KEY_ID)-pub.pem \
             --signature ${{ inputs.binary }}-signature-$i \
             $append_opt \
-            -- "${{ inputs.binary }}.signed"
+            -- ${{ inputs.binary }}.signed"
+
+          docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${docker_cmd}"
           
           # verify signature
           espsecure.py verify_signature --version 2 --keyfile $(basename "$KEY_ID")-pub.pem "${{ inputs.binary }}.signed"
