@@ -22,10 +22,6 @@ on:
         description: "The base ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
         required: true
         type: string
-      firmware_signing_azure_prod_key_id_base:
-        description: "The base ID for the production key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
-        required: true
-        type: string
       num_signing_keys:
         required: true
         type: number
