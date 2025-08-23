@@ -1,0 +1,64 @@
+name: "Sign ESP Binary"
+description: |
+  Sign a ESP binary (bootloader or app) using Azure Key Vault. 
+  The signed binary path is returned in GITHUB_OUTPUT "signed_binary_path".
+  It is stored in the same path as the input binary with ".signed" appended.
+  If <num_keys> is greater than 1, the output will have multiple signatures appended, 
+  one for each key.
+inputs:
+  binary:
+    description: "The binary file (with path) to sign."
+    required: true
+  azure_subscription_id:
+    description: "The Azure subscription ID."
+    required: true
+  azure_tenant_id:
+    description: "The Azure tenant ID."
+    required: true
+  azure_app_id:
+    description: "The Azure app ID that have access to vault signing keys"
+    required: true
+  key_id_base:
+    description: "The base ID for the key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
+    required: true
+  num_keys:
+    description: "The number of signing keys to use (at least 1). The key_id_base will be postfixed with 0, 1, ..., N"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Azure OIDC login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure_app_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: Compute SHA-256 digest as base64
+      id: digest
+      shell: bash
+      run: |
+        DIGEST=$(openssl dgst -sha256 -binary ${{ inputs.binary }} | base64 -w0)
+        echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
+
+    - name: Sign digest with Key Vault
+      id: sign
+      shell: bash
+      run: |
+        for i in {0..$(( {{ inputs.num_keys }} - 1 ))}; do
+          KEY_ID="${{ inputs.key_id_base }}$i"
+          SIG=$(az keyvault key sign \
+            --id "$KEY_ID" \
+            --algorithm PS256 \
+            --digest "${{ steps.digest.outputs.digest }}" --query signature -o tsv)
+          echo "$SIG"| base64 -d > ${{ inputs.binary }}-signature-$i
+
+          if [ "$(wc -c < "${{ inputs.binary }}-signature-$i")" -ne 384 ]; then
+              echo "Unexpected RSA signature length (expected 384 bytes)" >&2
+              exit 1
+          fi
+
+          # download public key
+          az keyvault key download --id "$KEY_ID" --file $(basename "$KEY_ID")-pub.pem
+        done
