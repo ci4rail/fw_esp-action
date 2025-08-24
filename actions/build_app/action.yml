@@ -39,6 +39,7 @@ runs:
 
         docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
+        set -x
         sudo chown -R runner .
         build_dir=$(compgen -d -- 'build*' | sort | head -n1)
 
