@@ -40,15 +40,17 @@ runs:
         docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
         sudo chown -R runner .
-        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
+        build_dir=$(compgen -d -- 'build*' | sort | head -n1)
+
+        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' ${build_dir}/build.ninja)
         project=${{ steps.identify.outputs.project }}
-        app_file=build/${project}-${version}.bin
-        cp build/${project}.bin ${app_file}
+        app_file=${build_dir}/${project}-${version}.bin
+        cp ${build_dir}/${project}.bin ${app_file}
 
         dfu_file=""
         if [ "${build_dfu}" = "true" ]; then
-          dfu_file="build/${app_file}.dfu.bin"
-          cp build/dfu.bin ${dfu_file}
+          dfu_file="${build_dir}/${app_file}.dfu.bin"
+          cp ${build_dir}/dfu.bin ${dfu_file}
         fi
 
         echo "app-file=${app_file}" >> $GITHUB_OUTPUT
