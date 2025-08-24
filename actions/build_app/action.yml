@@ -40,8 +40,10 @@ runs:
         docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
         set -x
+        ls -l
         sudo chown -R runner .
         build_dir=$(compgen -d -- 'build*' | sort | head -n1)
+        echo ${build_dir}
 
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' ${build_dir}/build.ninja)
         project=${{ steps.identify.outputs.project }}
