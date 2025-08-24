@@ -15,7 +15,7 @@ APP:
 
     create vulnerability report
 
-    create factory flashing file
+    create factory flashing file (using bootloader from bootloader repo)
 
     create release
 
@@ -32,3 +32,24 @@ BOOTLOADER:
     create vulnerability report
 
     create release
+
+
+NON-SECURE PROJECT:
+
+    build
+
+    create fwpkg
+
+    put fw package to artifacts
+
+    test fwpkg
+
+    create sbom
+
+    create vulnerability report
+
+    create factory flashing file (using bootloader from this repo)
+
+    create release
+
+    create release in public repo

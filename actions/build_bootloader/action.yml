@@ -16,10 +16,10 @@ runs:
       run: |
         project=$(grep -m1 -o 'project([^)]*)' CMakeLists.txt | sed 's/project(\(.*\))/\1/')
         echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
+
     - name: Build bootloader
       shell: bash
       id: build
-      # Build firmware using same docker image as used in devcontainer or gitpod to have exactly same environment as for local builds
       run: |
         build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && make bootloader"
         echo "calling build container with command: ${build_cmd}"
@@ -29,7 +29,7 @@ runs:
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
         project=${{ steps.identify.outputs.project }}
-        blfile=${project}-bootloader-${version}.bin
+        blfile=${project}-${version}.bin
         cp build/bootloader/bootloader.bin build/bootloader/${blfile}
 
         echo "version=${version}" >> $GITHUB_OUTPUT
@@ -43,5 +43,5 @@ outputs:
     description: "Bootloader version"
     value: ${{ steps.build.outputs.version }}
   bootloader-file:
-    description: "Bootloader file name"
+    description: "Bootloader path (with project name and version)"
     value: ${{ steps.build.outputs.bootloader-file }}
