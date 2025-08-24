@@ -28,7 +28,7 @@ runs:
       shell: bash
       id: build
       run: |
-        build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && ${app_build_command}"
+        build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && ${{ inputs.app_build_command }}"
 
         build_dfu=${{ inputs.build-dfu }}
         if [ "${build_dfu}" = "true" ]; then
@@ -37,7 +37,7 @@ runs:
 
         echo "calling build container with command: ${build_cmd}"
 
-        docker run -v $(pwd):/src ${builder_image} bash -c "${build_cmd}"
+        docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
         sudo chown -R runner .
         version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
