@@ -1,0 +1,65 @@
+name: ESP32 Secure App Workflow
+
+permissions:
+  id-token: write # required for OIDC
+  contents: read
+
+on:
+  workflow_call:
+    inputs:
+      access-token:
+        description: "Personal access token for private repos"
+        required: true
+        type: string
+      firmware_signing_azure_subscription_id:
+        required: true
+        type: string
+      firmware_signing_azure_tenant_id:
+        required: true
+        type: string
+      firmware_signing_azure_app_id:
+        required: true
+        type: string
+      firmware_signing_azure_dev_key_id:
+        description: "ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g0"
+        required: true
+        type: string
+      build-dfu:
+        description: "Whether to build dfu binary"
+        required: false
+        type: boolean
+        default: false
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ inputs.access-token }}
+
+      - name: Get builder image
+        id: get_builder
+        uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
+
+      - name: Build App
+        id: build_app
+        uses: ci4rail/fw_esp-action/actions/build_app@v10
+        with:
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+          app-build-command: make build-secure
+          build-dfu: ${{ inputs.build-dfu }}
+
+      - name: Sign App
+        id: sign_app
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+          binary: ${{ steps.build_app.outputs.app-file }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ inputs.firmware_signing_azure_app_id }}
+          key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
+          num_keys: 1
