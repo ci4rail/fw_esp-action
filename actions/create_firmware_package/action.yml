@@ -29,7 +29,7 @@ runs:
         source ${{ inputs.fw-package-env }}
         variant=$(echo ${{ inputs.project-name }} | cut -d - -f 3- )
 
-        ${{ github.action_path }}/../../scripts/io4edge-make-fwpkg.sh \
+        ${{ github.action_path }}/io4edge-make-fwpkg.sh \
           ${{ inputs.app-binary }} \
           ${PKG_FULL_HW_NAME}\
           ${variant} \
