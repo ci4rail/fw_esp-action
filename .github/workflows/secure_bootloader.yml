@@ -24,7 +24,7 @@ on:
         required: true
         type: string
       firmware_signing_azure_prod_key_id_base:
-        description: "The base ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
+        description: "The base ID for the production key used for signing firmware. e.g. https://vault-firmware-signing.vault.azure.net/keys/ci4rail-sio06-00-g"
         required: true
         type: string      
       num_signing_keys:
@@ -73,7 +73,7 @@ jobs:
           num_keys: ${{ inputs.num_signing_keys }}
 
       - name: Sign bootloader for production
-        id: sign_bootloader_dev
+        id: sign_bootloader_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
           builder-image: ${{ steps.duplicate_build_output.outputs.prod-bootloader }}
