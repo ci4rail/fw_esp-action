@@ -53,15 +53,18 @@ jobs:
 
       - name: Duplicate build output
         shell: bash
+        id: duplicate_build_output
         run: |
           cp ${{ steps.build_bootloader.outputs.bootloader-file }} build/bootloader-dev.bin
           cp ${{ steps.build_bootloader.outputs.bootloader-file }} build/bootloader-prod.bin
+          echo "dev-bootloader=build/bootloader-dev.bin" >> $GITHUB_OUTPUT
+          echo "prod-bootloader=build/bootloader-prod.bin" >> $GITHUB_OUTPUT
 
       - name: Sign bootloader for development
         id: sign_bootloader_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          builder-image: build/bootloader-dev.bin
+          builder-image: ${{ steps.duplicate_build_output.outputs.dev-bootloader }}
           binary: ${{ steps.build_bootloader.outputs.bootloader-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
@@ -73,7 +76,7 @@ jobs:
         id: sign_bootloader_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          builder-image: build/bootloader-prod.bin
+          builder-image: ${{ steps.duplicate_build_output.outputs.prod-bootloader }}
           binary: ${{ steps.build_bootloader.outputs.bootloader-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
