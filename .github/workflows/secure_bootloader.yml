@@ -64,8 +64,8 @@ jobs:
         id: sign_bootloader_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          builder-image: ${{ steps.duplicate_build_output.outputs.dev-bootloader }}
-          binary: ${{ steps.build_bootloader.outputs.bootloader-file }}
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+          binary: ${{ steps.duplicate_build_output.outputs.dev-bootloader }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
@@ -76,8 +76,8 @@ jobs:
         id: sign_bootloader_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          builder-image: ${{ steps.duplicate_build_output.outputs.prod-bootloader }}
-          binary: ${{ steps.build_bootloader.outputs.bootloader-file }}
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+          binary: ${{ steps.duplicate_build_output.outputs.prod-bootloader }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
