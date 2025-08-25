@@ -61,6 +61,8 @@ runs:
         echo "version=${version}" >> $GITHUB_OUTPUT
         echo "dfu-file=${dfu_file}" >> $GITHUB_OUTPUT
 
+        cat $GITHUB_OUTPUT
+
 outputs:
   project-name:
     description: "Project name"
