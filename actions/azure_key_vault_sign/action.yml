@@ -1,8 +1,8 @@
 name: "Sign ESP Binary"
 description: |
   Sign a ESP binary (bootloader or app) using Azure Key Vault. 
-  The signed binary path is returned in GITHUB_OUTPUT "signed_binary_path".
-  It is stored in the same path as the input binary with ".signed" appended.
+  After signing, the signed binary is copied over the input binary.
+  For convinience the path of the signed binary is also available as output.
   If <num_keys> is greater than 1, the output will have multiple signatures appended, 
   one for each key.
 inputs:
@@ -100,7 +100,8 @@ runs:
 
           append_opt="--append_signatures"
         done
-        echo "signed_binary_path=${{ inputs.binary }}.signed" >> "$GITHUB_OUTPUT"
+        cp ${{ inputs.binary }}.signed ${{ inputs.binary }}
+        echo "signed_binary_path=${{ inputs.binary }}" >> "$GITHUB_OUTPUT"
 
 outputs:
   signed_binary_path:

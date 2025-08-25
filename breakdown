@@ -3,7 +3,9 @@ APP:
 
     build
 
-    sign (if secure, one key)
+    sign dev with up to 3 keys
+
+    sign prod with up to 3 keys
 
     create fwpkg
 
@@ -25,7 +27,9 @@ BOOTLOADER:
 
     build
 
-    sign (if secure, up to three keys)
+    sign dev with up to 3 keys
+
+    sign prod with up to 3 keys
 
     create sbom
 
