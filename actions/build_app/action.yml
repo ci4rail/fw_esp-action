@@ -66,7 +66,7 @@ outputs:
     description: "Project name"
     value: ${{ steps.identify.outputs.project }}
   version:
-    description: "Bootloader version"
+    description: "App version"
     value: ${{ steps.build.outputs.version }}
   app-file:
     description: "App path (with project name and version)"

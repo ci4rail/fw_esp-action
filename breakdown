@@ -3,15 +3,17 @@ APP:
 
     build
 
-    sign dev with up to 3 keys
+    sign dev 
 
-    sign prod with up to 3 keys
+    sign prod
 
-    create fwpkg
+    create dev fwpkg
 
-    put fw package to artifacts
+    create prod fwpkg
 
-    test fwpkg
+    put dev fw package to artifacts
+
+    test dev fwpkg
 
     create sbom
 

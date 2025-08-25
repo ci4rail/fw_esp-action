@@ -13,11 +13,18 @@ on:
       firmware_signing_azure_tenant_id:
         required: true
         type: string
-      firmware_signing_azure_app_id:
+      firmware_signing_azure_dev_app_id:
         required: true
         type: string
       firmware_signing_azure_dev_key_id:
         description: "ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g0"
+        required: true
+        type: string
+      firmware_signing_azure_prod_app_id:
+        required: true
+        type: string
+      firmware_signing_azure_prod_key_id:
+        description: "ID for the production key used for signing firmware. e.g. https://vault-firmware-signing.vault.azure.net/keys/ci4rail-sio06-00-g0"
         required: true
         type: string
       build-dfu:
@@ -52,14 +59,54 @@ jobs:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
-      - name: Sign App
-        id: sign_app
+      - name: Duplicate build output
+        shell: bash
+        id: duplicate_build_output
+        run: |
+          filename_dev=$(basename ${{ steps.build_app.outputs.app-file }})
+          filename_dev=$(basename ${filename%.*})-dev
+          cp ${{ steps.build_app.outputs.app-file }}  ${{ steps.build_app.outputs.build_dir }}/$filename_dev.bin
+          echo "dev-app=${filename_dev}" >> $GITHUB_OUTPUT
+          echo "prod-app=${{ steps.build_app.outputs.app-file }}" >> $GITHUB_OUTPUT
+
+      - name: Sign App for development
+        id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
           builder-image: ${{ steps.get_builder.outputs.builder-image }}
-          binary: ${{ steps.build_app.outputs.app-file }}
+          binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
-          azure_app_id: ${{ inputs.firmware_signing_azure_app_id }}
+          azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
           key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
           num_keys: 1
+
+      - name: Sign App for production
+        id: sign_app_prod
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+          binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
+          key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
+          num_keys: 1
+
+      - name: Create firmware package for development
+        id: create_fwpkg_dev
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        with:
+          output-file-suffix: -dev
+          app-binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
+
+      - name: Create firmware package for production
+        id: create_fwpkg_prod
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        with:
+          output-file-suffix: -prod
+          app-binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
