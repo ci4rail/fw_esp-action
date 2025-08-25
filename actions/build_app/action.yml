@@ -59,7 +59,7 @@ runs:
         echo "build-dir=${build_dir}" >> $GITHUB_OUTPUT
         echo "app-file=${app_file}" >> $GITHUB_OUTPUT
         echo "version=${version}" >> $GITHUB_OUTPUT
-        echo "dfu_file=${dfu_file}" >> $GITHUB_OUTPUT
+        echo "dfu-file=${dfu_file}" >> $GITHUB_OUTPUT
 
 outputs:
   project-name:
@@ -74,3 +74,6 @@ outputs:
   build-dir:
     description: "Build directory"
     value: ${{ steps.build.outputs.build-dir }}
+  dfu-file:
+    description: "DFU file path"
+    value: ${{ steps.build.outputs.dfu-file }}
