@@ -84,6 +84,7 @@ runs:
           fi
 
           # download public key
+          rm -f $(basename "$KEY_ID")-pub.pem
           az keyvault key download --id "$KEY_ID" --file $(basename "$KEY_ID")-pub.pem
 
           # sign and verify signature
