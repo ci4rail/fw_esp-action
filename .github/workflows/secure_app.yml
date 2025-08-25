@@ -64,7 +64,7 @@ jobs:
         id: duplicate_build_output
         run: |
           filename_dev=$(basename ${{ steps.build_app.outputs.app-file }})
-          filename_dev=$(basename ${filename%.*})-dev
+          filename_dev=${filename_dev%.*}-dev
           cp ${{ steps.build_app.outputs.app-file }}  ${{ steps.build_app.outputs.build_dir }}/$filename_dev.bin
           echo "dev-app=${filename_dev}" >> $GITHUB_OUTPUT
           echo "prod-app=${{ steps.build_app.outputs.app-file }}" >> $GITHUB_OUTPUT
