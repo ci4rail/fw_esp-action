@@ -163,6 +163,12 @@ jobs:
           path: ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
           retention-days: 14
 
+      - name: Post-clean workspace
+        if: always()
+        run: |
+          echo cleaning "${{ github.workspace }}"
+          sudo chown -R "$(id -u)":"$(id -g)" "${{ github.workspace }}" 2>/dev/null || true
+
   # Run test in separate job, so that selfhosted runner is not blocked
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
@@ -189,3 +195,4 @@ jobs:
           request-timeout: ${{ inputs.teststation-request-timeout }}
           minio_access_key: ${{ secrets.minio-access-key }}
           minio_secret_key: ${{ secrets.minio-secret-key }}
+

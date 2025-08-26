@@ -28,9 +28,7 @@ runs:
       shell: bash
       id: build
       run: |
-        #build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && ${{ inputs.app-build-command }}"
-        build_cmd="source /opt/esp/idf/export.sh && cd /src/ &&\
-         sudo --preserve-env -u '#$(stat -c '%u' "$PWD")' -g '#$(stat -c '%g' "$PWD")' bash -lc '${{ inputs.app-build-command }}'"
+        build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && ${{ inputs.app-build-command }}"
 
         build_dfu=${{ inputs.build-dfu }}
         if [ "${build_dfu}" = "true" ]; then
