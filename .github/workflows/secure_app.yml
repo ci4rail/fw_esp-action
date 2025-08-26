@@ -32,11 +32,42 @@ on:
         required: false
         type: boolean
         default: false
+      teststation-broker:
+        description: "IP:Port of MQTT broker where test station listens to"
+        type: string
+        required: true
+      teststation-master-topic:
+        description: "teststation request is published to <master-topic>/request"
+        required: false
+        type: string
+        default: "teststation"
+      teststation-request-timeout:
+        description: "Time in seconds to wait for teststation to become available"
+        required: false
+        type: number
+        default: 3600
+      test-name:
+        description: "Name of the test to execute (must match an entry in the test schedulers config file)"
+        type: string
+        required: true
+      test-device-name:
+        description: "Device id as listed in test schedulers config file to run the test on test station"
+        type: string
+        required: true
+      
     secrets:
-      access_token:
+      access-token:
         description: "Personal access token for private repos"
         required: true
-
+      tailscale-key:
+        description: "a reusable & emphermeral yoda tailscale key"
+        required: true
+      minio-access-key:
+        description: "Access key for minio"
+        required: true
+      minio-secret-key:
+        description: "Secret key for minio"
+        required: true
 jobs:
   build:
     runs-on: [self-hosted, linux, x64]
@@ -45,7 +76,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           submodules: "recursive"
-          token: ${{ secrets.access_token }}
+          token: ${{ secrets.access-token }}
 
       - name: Get builder image
         id: get_builder
@@ -102,6 +133,12 @@ jobs:
           project-name: ${{ steps.build_app.outputs.project-name }}
           version: ${{ steps.build_app.outputs.version }}
 
+      - name: Create fwpgk-dev var
+        shell: bash
+        id: create_fwpkg_dev_var
+        run: |
+          echo "fwpkg-dev=${{ steps.create_fwpkg_dev.outputs.fwpkg }}" >> $GITHUB_OUTPUT
+
       - name: Create firmware package for production
         id: create_fwpkg_prod
         uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
@@ -110,3 +147,31 @@ jobs:
           app-binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
           project-name: ${{ steps.build_app.outputs.project-name }}
           version: ${{ steps.build_app.outputs.version }}
+
+      - name: Upload firmware package for testing
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: fwpkg-dev
+          path: ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
+          retention-days: 14
+
+      - name: Test firmware package for development
+        uses: ci4rail/teststation-action@v5
+        with:
+          pipeline-name: "${{ github.repository }}"
+          mqtt-broker-url: "${{ inputs.teststation-broker }}"
+          test-name: ${{ inputs.test-name }}
+          artifact-override: |
+            {
+              \"desired_versions.${{ inputs.test-device-name }}.name\": ${{ steps.build_app.outputs.project-name }},
+              \"desired_versions.${{ inputs.test-device-name }}.version\": ${{ steps.build_app.outputs.version }},
+              \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload_artifact.outputs.artifact-id }}/zip\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
+            }
+          access-token: ${{ secrets.access-token }}
+          tailscale-key: ${{ secrets.tailscale-key }}
+          request-timeout: ${{ inputs.teststation-request-timeout }}
+          minio_access_key: ${{ secrets.minio-access-key }}
+          minio_secret_key: ${{ secrets.minio-secret-key }}
