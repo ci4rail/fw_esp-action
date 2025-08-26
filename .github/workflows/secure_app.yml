@@ -184,8 +184,8 @@ jobs:
           test-name: ${{ inputs.test-name }}
           artifact-override: |
             {
-              \"desired_versions.${{ inputs.test-device-name }}.name\": "${{ needs.build.outputs.project-name }}",
-              \"desired_versions.${{ inputs.test-device-name }}.version\": "${{ needs.build.outputs.version }}",
+              \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
+              \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
               \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
               \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ needs.build.outputs.artifact-id }}/zip\",
               \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
