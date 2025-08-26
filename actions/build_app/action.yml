@@ -37,7 +37,7 @@ runs:
 
         echo "calling build container with command: ${build_cmd}"
 
-        docker run -v $(pwd):/src -u runner ${{ inputs.builder-image }} bash -c "${build_cmd}"
+        docker run -v $(pwd):/src -u $(id -u):$(id -g) ${{ inputs.builder-image }} bash -c "${build_cmd}"
 
         set -x
         ls -l
