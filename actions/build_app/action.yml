@@ -31,7 +31,7 @@ runs:
         #build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && ${{ inputs.app-build-command }}"
         build_cmd="source /opt/esp/idf/export.sh && cd /src/ \
          && HOST_UID=$(stat -c '%u' "$PWD") && HOST_GID=$(stat -c '%g' "$PWD") && \
-         sudo --preserve-env=PATH -u "#$HOST_UID" -g "#$HOST_GID" bash -lc '${{ inputs.app-build-command }}'"
+         sudo --preserve-env=PATH -u \"#$HOST_UID\" -g \"#$HOST_GID\" bash -lc '${{ inputs.app-build-command }}'"
 
         build_dfu=${{ inputs.build-dfu }}
         if [ "${build_dfu}" = "true" ]; then
