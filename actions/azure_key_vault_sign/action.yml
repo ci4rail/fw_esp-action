@@ -97,7 +97,7 @@ runs:
             espsecure.py verify_signature --version 2 --keyfile $(basename $KEY_ID)-pub.pem ${{ inputs.binary }}.signed
             "
           echo $docker_cmd
-          docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${docker_cmd}"
+          docker run -v $(pwd):/src -u runner ${{ inputs.builder-image }} bash -c "${docker_cmd}"
 
           append_opt="--append_signatures"
         done
