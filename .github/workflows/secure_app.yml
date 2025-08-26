@@ -166,7 +166,7 @@ jobs:
   # Run test in separate job, so that selfhosted runner is not blocked
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
-    if: inputs.test_name != ''
+    if: inputs.test-name != ''
     needs: build
     runs-on: ubuntu-latest
     steps:
