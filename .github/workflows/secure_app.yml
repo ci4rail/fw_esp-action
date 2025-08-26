@@ -47,7 +47,9 @@ on:
         type: number
         default: 3600
       test-name:
-        description: "Name of the test to execute (must match an entry in the test schedulers config file)"
+        description: |
+          Name of the test to execute (must match an entry in the test schedulers config file)
+          If empty, skip test execution
         type: string
         required: true
       test-device-name:
@@ -60,7 +62,7 @@ on:
         description: "Personal access token for private repos"
         required: true
       tailscale-key:
-        description: "a reusable & emphermeral yoda tailscale key"
+        description: "a reusable tailscale key"
         required: true
       minio-access-key:
         description: "Access key for minio"
@@ -68,9 +70,14 @@ on:
       minio-secret-key:
         description: "Secret key for minio"
         required: true
+
 jobs:
   build:
     runs-on: [self-hosted, linux, x64]
+    outputs:
+      project-name: ${{ steps.build_app.outputs.project-name }}
+      version: ${{ steps.build_app.outputs.version }}
+      artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -156,18 +163,25 @@ jobs:
           path: ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
           retention-days: 14
 
+  # Run test in separate job, so that selfhosted runner is not blocked
+  # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
+  test:
+    if: inputs.test_name != ''
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Test firmware package for development
         uses: ci4rail/teststation-action@v5
         with:
-          pipeline-name: "${{ github.repository }}"
+          pipeline-name: "${{ github.run_id }}"
           mqtt-broker-url: "${{ inputs.teststation-broker }}"
           test-name: ${{ inputs.test-name }}
           artifact-override: |
             {
-              \"desired_versions.${{ inputs.test-device-name }}.name\": ${{ steps.build_app.outputs.project-name }},
-              \"desired_versions.${{ inputs.test-device-name }}.version\": ${{ steps.build_app.outputs.version }},
+              \"desired_versions.${{ inputs.test-device-name }}.name\": ${{ needs.build.outputs.project-name }},
+              \"desired_versions.${{ inputs.test-device-name }}.version\": ${{ needs.build.outputs.version }},
               \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
-              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload_artifact.outputs.artifact-id }}/zip\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ needs.build.outputs.artifact-id }}/zip\",
               \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
             }
           access-token: ${{ secrets.access-token }}
