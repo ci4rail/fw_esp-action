@@ -9,8 +9,6 @@ set -x
 set -e
 set -o pipefail
 
-which az
-
 binary_file=$1
 num_keys=$2
 key_id_base=$3
