@@ -97,9 +97,7 @@ jobs:
     outputs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
-      artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
-      dev-app: ${{ steps.duplicate_build_output.outputs.dev-app }}
-      prod-app: ${{ steps.duplicate_build_output.outputs.prod-app }}
+      app-file: ${{ steps.build_app.outputs.app-file }}
     steps:
       - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
       - name: Build App
@@ -109,24 +107,13 @@ jobs:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
-      - name: Duplicate build output
-        shell: bash
-        id: duplicate_build_output
-        run: |
-          filename_dev=$(basename ${{ steps.build_app.outputs.app-file }})
-          filename_dev=${{ steps.build_app.outputs.build-dir }}/${filename_dev%.*}-dev.bin
-          runuser -u hostusr -- bash -lc "cp ${{ steps.build_app.outputs.app-file }} $filename_dev"
-          echo "dev-app=${filename_dev}" >> $GITHUB_OUTPUT
-          echo "prod-app=${{ steps.build_app.outputs.app-file }}" >> $GITHUB_OUTPUT
-
       - name: upload built files as artifact
         id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: build-outputs
           path: |
-            ${{ steps.duplicate_build_output.outputs.dev-app }}
-            ${{ steps.duplicate_build_output.outputs.prod-app }}
+            ${{ steps.build_app.outputs.app-file-path }}
           retention-days: 1
           if-no-files-found: error
 
@@ -140,13 +127,13 @@ jobs:
         with:
           name: build-outputs
           path: akv-sign
-      - shell: bash
-        run: ls -lR akv-sign
+
       - name: Generate signature for development
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: akv-sign/${{ needs.build.outputs.dev-app }}
+          binary: ${{ needs.build.outputs.app-file}}
+          signature-suffix: -dev
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
@@ -157,12 +144,27 @@ jobs:
         id: sign_app_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: akv-sign/${{ needs.build.outputs.prod-app }}
+          binary: ${{ needs.build.outputs.app-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
+
+      - shell: bash
+        run: |
+          ls -lR akv-sign
+
+      - name: upload signatures
+        id: upload_signatures
+        uses: actions/upload-artifact@v4
+        with:
+          name: signatures
+          path: |
+            akv-sign/*signature*
+            akv-sign/*pub-*.pem
+          retention-days: 1
+          if-no-files-found: error
 
   # execute steps in devcontainer
   esp_sign:
@@ -175,6 +177,20 @@ jobs:
       fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
       fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
     steps:
+      - name: Download signatures
+        uses: actions/download-artifact@v4
+        with:
+          name: signatures
+          path: esp-sign
+      - shell: bash
+        id: duplicate_build_output
+        run: |
+          cd akv-sign
+          filename_dev=${{ needs.build.outputs.app-file }}
+          filename_dev=${filename_dev%.*}-dev.bin
+          cp ${{ needs.build.outputs.app-file }} $filename_dev
+          echo "dev-app=akv-sign/$filename_dev" >> $GITHUB_OUTPUT
+          echo "prod-app=akv-sign/${{ needs.build.outputs.app-file }}" >> $GITHUB_OUTPUT
       - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
       - name: Sign App for development
         id: sign_app_dev

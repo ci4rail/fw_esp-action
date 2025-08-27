@@ -2,11 +2,10 @@ name: "Sign ESP Binary"
 description: |
   Sign the digest of an ESP binary (bootloader or app) using Azure Key Vault. 
   The action will create signature files, one for each key, named:
-  <binary_file>-signature-0
-  <binary_file>-signature-1
+  <binary_file>-<suffix>signature-0
+  <binary_file>-<suffix>signature-1
   ...
-  Or just 
-  <binary_file>-signature if num_keys==1
+
 inputs:
   binary:
     description: "The binary file (with path) to sign."
@@ -28,6 +27,10 @@ inputs:
       The number of signing keys to use (at least 1). 
       The key_id_base will be postfixed with 0, 1, ..., N, if num_keys > 1
     required: true
+  signature-suffix:
+    description: "The suffix to use for the signature files."
+    required: false
+    default: ""
 
 runs:
   using: "composite"
