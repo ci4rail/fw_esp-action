@@ -101,18 +101,7 @@ jobs:
       # fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
       # fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
     steps:
-      - name: setup devcontainer user
-        shell: bash
-        id: setup_devcontainer_user
-        run: |
-          HUID=$(stat -c '%u' "$GITHUB_WORKSPACE")
-          HGID=$(stat -c '%g' "$GITHUB_WORKSPACE")
-          echo "Using host UID:GID = ${HUID}:${HGID}"
-
-          getent group "${HGID}" >/dev/null || groupadd -g "$HGID" hostgrp
-          id -u hostusr >/dev/null 2>&1 || useradd -M -s /bin/bash -u "$HUID" -g "$HGID" hostusr
-          mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr
-
+      - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
       - name: Build App
         id: build_app
         uses: ci4rail/fw_esp-action/actions/build_app@v10
@@ -166,6 +155,7 @@ jobs:
       fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
       fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
     steps:
+      - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
       - name: Sign App for development
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/esp_sign@v10
