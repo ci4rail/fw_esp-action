@@ -35,8 +35,11 @@ outputs:
     description: "App version"
     value: ${{ steps.build.outputs.version }}
   app-file:
-    description: "App path (with project name and version)"
+    description: "App file without path (with project name and version)"
     value: ${{ steps.build.outputs.app-file }}
+  app-file-path:
+    description: "App file path"
+    value: ${{ steps.build.outputs.app-file-path }}
   build-dir:
     description: "Build directory"
     value: ${{ steps.build.outputs.build-dir }}
