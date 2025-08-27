@@ -1,0 +1,23 @@
+name: "Generate Github Release"
+description: |
+  Create a new GitHub release for the firmware package in the current repository
+
+inputs:
+  assets: 
+    description: assets to include in the release, separated by newline
+    required: true
+  target_commitish:
+    description: "The commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Default: the repository's default branch (usually main)."
+    required: false
+    default: ""
+
+runs:
+  using: "composite"
+  steps:
+    - name: Release 
+      uses: softprops/action-gh-release@v2
+      if: github.ref_type == 'tag'
+      with:
+        files: ${{ inputs.assets }}
+        generate_release_notes: true
+        target_commitish: ${{ inputs.target_commitish }}

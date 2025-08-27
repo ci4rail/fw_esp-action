@@ -72,6 +72,7 @@ on:
         required: true
 
 jobs:
+  # execute steps directly in runner
   get_builder:
     runs-on: [self-hosted, linux, x64]
     steps:
@@ -86,6 +87,7 @@ jobs:
     outputs:
       builder-image: ${{ steps.get_builder.outputs.builder-image }}
 
+  # execute steps in devcontainer
   build:
     needs: get_builder
     runs-on: [self-hosted, linux, x64]
@@ -117,15 +119,34 @@ jobs:
           echo "dev-app=${filename_dev}" >> $GITHUB_OUTPUT
           echo "prod-app=${{ steps.build_app.outputs.app-file }}" >> $GITHUB_OUTPUT
 
+      - name: upload built files as artifact
+        id: upload_artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-outputs
+          path: |
+            ${{ steps.duplicate_build_output.outputs.dev-app }}
+            ${{ steps.duplicate_build_output.outputs.prod-app }}
+          retention-days: 1
+          if-no-files-found: error
+
+  # execute steps directly in runner
   akv_sign:
     needs: build
     runs-on: [self-hosted, linux, x64]
     steps:
+      - name: Download build files
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+          path: akv-sign
+      - shell: bash
+        run: ls -lR akv-sign
       - name: Generate signature for development
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: ${{ needs.build.outputs.dev-app }}
+          binary: akv-sign/${{ needs.build.outputs.dev-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
@@ -136,13 +157,14 @@ jobs:
         id: sign_app_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: ${{ needs.build.outputs.prod-app }}
+          binary: akv-sign/${{ needs.build.outputs.prod-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
 
+  # execute steps in devcontainer
   esp_sign:
     needs: [get_builder, akv_sign, build]
     runs-on: [self-hosted, linux, x64]
@@ -193,6 +215,7 @@ jobs:
           project-name: ${{ needs.build.outputs.project-name }}
           version: ${{ needs.build.outputs.version }}
 
+  # execute steps directly in runner
   upload:
     needs: [build, esp_sign]
     runs-on: [self-hosted, linux, x64]
@@ -207,7 +230,7 @@ jobs:
           path: ${{ needs.esp_sign.outputs.fwpkg-dev }}
           retention-days: 14
 
-  # Run test in separate job, so that selfhosted runner is not blocked
+  # Execute steps in an github runner (not selfhosted)
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
     if: inputs.test-name != ''
