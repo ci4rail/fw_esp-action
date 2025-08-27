@@ -174,9 +174,9 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
         with:
           output-file-suffix: -dev
-          app-binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
-          project-name: ${{ steps.build_app.outputs.project-name }}
-          version: ${{ steps.build_app.outputs.version }}
+          app-binary: ${{ needs.build.outputs.dev-app }}
+          project-name: ${{ needs.build.outputs.project-name }}
+          version: ${{ needs.build.outputs.version }}
 
       - name: Create fwpgk-dev var
         shell: bash
@@ -189,9 +189,9 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
         with:
           output-file-suffix: -prod
-          app-binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
-          project-name: ${{ steps.build_app.outputs.project-name }}
-          version: ${{ steps.build_app.outputs.version }}
+          app-binary: ${{ needs.build.outputs.prod-app }}
+          project-name: ${{ needs.build.outputs.project-name }}
+          version: ${{ needs.build.outputs.version }}
 
   upload:
     needs: [build, esp_sign]
