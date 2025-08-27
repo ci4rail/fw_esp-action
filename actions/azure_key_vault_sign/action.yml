@@ -6,9 +6,6 @@ description: |
   If <num_keys> is greater than 1, the output will have multiple signatures appended, 
   one for each key.
 inputs:
-  builder-image:
-    description: "Docker image name"
-    required: true
   binary:
     description: "The binary file (with path) to sign."
     required: true
@@ -51,58 +48,12 @@ runs:
         tenant-id: ${{ inputs.azure_tenant_id }}
         subscription-id: ${{ inputs.azure_subscription_id }}
 
-    - name: Compute SHA-256 digest as base64
-      id: digest
-      shell: bash
-      run: |
-        DIGEST=$(openssl dgst -sha256 -binary ${{ inputs.binary }} | base64 -w0)
-        echo "digest=$DIGEST" >> "$GITHUB_OUTPUT"
 
     - name: Sign digest with Key Vault
       id: sign
       shell: bash
       run: |
-        # signing will be done in the .signed file
-        cp ${{ inputs.binary }} ${{ inputs.binary }}.signed
-        append_opt=""
-
-        for (( i=0; i<${{ inputs.num_keys }}; i++ )); do
-          if [ "${{ inputs.num_keys }}" -gt 1 ]; then
-            KEY_ID="${{ inputs.key_id_base }}$i"
-          else
-            KEY_ID="${{ inputs.key_id_base }}"
-          fi
-          SIG=$(az keyvault key sign \
-            --id "$KEY_ID" \
-            --algorithm PS256 \
-            --digest "${{ steps.digest.outputs.digest }}" --query signature -o tsv)
-          echo "$SIG"| base64 -d > ${{ inputs.binary }}-signature-$i
-
-          if [ "$(wc -c < "${{ inputs.binary }}-signature-$i")" -ne 384 ]; then
-              echo "Unexpected RSA signature length (expected 384 bytes)" >&2
-              exit 1
-          fi
-
-          # download public key
-          rm -f $(basename "$KEY_ID")-pub.pem
-          az keyvault key download --id "$KEY_ID" --file $(basename "$KEY_ID")-pub.pem
-
-          # sign and verify signature
-          # run in esp-idf container, as only there the espsecure.py is available
-          docker_cmd="source /opt/esp/idf/export.sh && cd /src && espsecure.py sign_data --version 2 \
-            --pub-key $(basename $KEY_ID)-pub.pem \
-            --signature ${{ inputs.binary }}-signature-$i \
-            $append_opt \
-            -- ${{ inputs.binary }}.signed && \
-            espsecure.py verify_signature --version 2 --keyfile $(basename $KEY_ID)-pub.pem ${{ inputs.binary }}.signed
-            "
-          echo $docker_cmd
-          docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${docker_cmd}"
-
-          append_opt="--append_signatures"
-        done
-        cp ${{ inputs.binary }}.signed ${{ inputs.binary }}
-        echo "signed_binary_path=${{ inputs.binary }}" >> "$GITHUB_OUTPUT"
+        runuser -u hostusr -- bash -lc '${{ github.action_path }}/sign.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }}"'
 
 outputs:
   signed_binary_path:

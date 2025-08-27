@@ -5,9 +5,16 @@
 # $2: build-dfu
 # $3: project-name
 
+if [ -z "$3" ]; then
+  echo "Error: too few arguments"
+  exit 1
+fi
+
 app_build_command=$1
 build_dfu=$2
 project_name=$3
+
+rm -rf build*
 
 source /opt/esp/idf/export.sh
 git config --global --add safe.directory /opt/esp/idf 
@@ -35,3 +42,5 @@ echo "build-dir=${build_dir}" >> $GITHUB_OUTPUT
 echo "app-file=${app_file}" >> $GITHUB_OUTPUT
 echo "version=${version}" >> $GITHUB_OUTPUT
 echo "dfu-file=${dfu_file}" >> $GITHUB_OUTPUT
+
+echo $GITHUB_OUTPUT
