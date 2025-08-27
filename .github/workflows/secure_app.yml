@@ -146,7 +146,7 @@ jobs:
           num_keys: 1
 
   esp_sign:
-    needs: [get_builder, akv_sign]
+    needs: [get_builder, akv_sign, build]
     runs-on: [self-hosted, linux, x64]
     container:
       image: ${{ needs.get_builder.outputs.builder-image }}
