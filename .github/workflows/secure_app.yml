@@ -72,28 +72,48 @@ on:
         required: true
 
 jobs:
-  build:
+  get_builder:
     runs-on: [self-hosted, linux, x64]
-    outputs:
-      project-name: ${{ steps.build_app.outputs.project-name }}
-      version: ${{ steps.build_app.outputs.version }}
-      artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
           submodules: "recursive"
           token: ${{ secrets.access-token }}
-
       - name: Get builder image
         id: get_builder
         uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
+    outputs:
+      builder-image: ${{ steps.get_builder.outputs.builder-image }}
+
+  build:
+    needs: get_builder
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: ${{ needs.get_builder.outputs.builder-image }}
+    outputs:
+      project-name: ${{ steps.build_app.outputs.project-name }}
+      version: ${{ steps.build_app.outputs.version }}
+      artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
+      fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
+      fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
+    steps:
+      - name: setup devcontainer user
+        shell: bash
+        id: setup_devcontainer_user
+        run: |
+          HUID=$(stat -c '%u' "$GITHUB_WORKSPACE")
+          HGID=$(stat -c '%g' "$GITHUB_WORKSPACE")
+          echo "Using host UID:GID = ${HUID}:${HGID}"
+
+          getent group "${HGID}" >/dev/null || groupadd -g "$HGID" hostgrp
+          id -u hostusr >/dev/null 2>&1 || useradd -M -s /bin/bash -u "$HUID" -g "$HGID" hostusr
+          mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr
 
       - name: Build App
         id: build_app
         uses: ci4rail/fw_esp-action/actions/build_app@v10
         with:
-          builder-image: ${{ steps.get_builder.outputs.builder-image }}
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
@@ -111,7 +131,6 @@ jobs:
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          builder-image: ${{ steps.get_builder.outputs.builder-image }}
           binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
@@ -123,7 +142,6 @@ jobs:
         id: sign_app_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          builder-image: ${{ steps.get_builder.outputs.builder-image }}
           binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
@@ -155,25 +173,25 @@ jobs:
           project-name: ${{ steps.build_app.outputs.project-name }}
           version: ${{ steps.build_app.outputs.version }}
 
+  upload:
+    needs: build
+    runs-on: [self-hosted, linux, x64]
+    outputs:
+      artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
+    steps:
       - name: Upload firmware package for testing
         id: upload_artifact
         uses: actions/upload-artifact@v4
         with:
           name: fwpkg-dev
-          path: ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
+          path: ${{ steps.create_fwpkg_dev.outputs.fwpkg-dev }}
           retention-days: 14
-
-      - name: Post-clean workspace
-        if: always()
-        run: |
-          echo cleaning "${{ github.workspace }}"
-          sudo chown -R "$(id -u)":"$(id -g)" "${{ github.workspace }}" 2>/dev/null || true
 
   # Run test in separate job, so that selfhosted runner is not blocked
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
     if: inputs.test-name != ''
-    needs: build
+    needs: [build, upload]
     runs-on: ubuntu-latest
     steps:
       - name: Test firmware package for development
@@ -187,7 +205,7 @@ jobs:
               \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
               \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
               \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
-              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ needs.build.outputs.artifact-id }}/zip\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ needs.upload.outputs.artifact-id }}/zip\",
               \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
             }
           access-token: ${{ secrets.access-token }}

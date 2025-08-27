@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+
+# Arguments: 
+# $1: app-build-command
+# $2: build-dfu
+# $3: project-name
+
+app_build_command=$1
+build_dfu=$2
+project_name=$3
+
+source /opt/esp/idf/export.sh
+git config --global --add safe.directory /opt/esp/idf 
+${app_build_command}
+
+
+if [ "${build_dfu}" = "true" ]; then
+    idf.py dfu
+fi
+
+build_dir=$(find . -maxdepth 1 -type d -name 'build*' -printf '%f\n' | sort | head -n1)
+echo ${build_dir}
+
+version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' ${build_dir}/build.ninja)
+app_file=${build_dir}/${project_name}-${version}.bin
+cp ${build_dir}/${project_name}.bin ${app_file}
+
+dfu_file=""
+if [ "${build_dfu}" = "true" ]; then
+    dfu_file="${build_dir}/${app_file}.dfu.bin"
+    cp ${build_dir}/dfu.bin ${dfu_file}
+fi
+
+echo "build-dir=${build_dir}" >> $GITHUB_OUTPUT
+echo "app-file=${app_file}" >> $GITHUB_OUTPUT
+echo "version=${version}" >> $GITHUB_OUTPUT
+echo "dfu-file=${dfu_file}" >> $GITHUB_OUTPUT

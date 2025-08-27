@@ -1,9 +1,6 @@
 name: "ESP Firmware Build Action"
 description: "Build ESP firmware using the devcontainer used in the project"
 inputs:
-  builder-image:
-    description: "Docker image name"
-    required: true
   app-build-command:
     description: "command to execute in container to build app (e.g. idf.py build or make build-secure)"
     required: true
@@ -28,40 +25,7 @@ runs:
       shell: bash
       id: build
       run: |
-        build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && ${{ inputs.app-build-command }}"
-
-        build_dfu=${{ inputs.build-dfu }}
-        if [ "${build_dfu}" = "true" ]; then
-          build_cmd="${build_cmd} && idf.py dfu"
-        fi
-
-        echo "calling build container with command: ${build_cmd}"
-
-        docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
-
-        set -x
-        ls -l
-        sudo chown -R runner .
-        build_dir=$(find . -maxdepth 1 -type d -name 'build*' -printf '%f\n' | sort | head -n1)
-        echo ${build_dir}
-
-        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' ${build_dir}/build.ninja)
-        project=${{ steps.identify.outputs.project }}
-        app_file=${build_dir}/${project}-${version}.bin
-        cp ${build_dir}/${project}.bin ${app_file}
-
-        dfu_file=""
-        if [ "${build_dfu}" = "true" ]; then
-          dfu_file="${build_dir}/${app_file}.dfu.bin"
-          cp ${build_dir}/dfu.bin ${dfu_file}
-        fi
-
-        echo "build-dir=${build_dir}" >> $GITHUB_OUTPUT
-        echo "app-file=${app_file}" >> $GITHUB_OUTPUT
-        echo "version=${version}" >> $GITHUB_OUTPUT
-        echo "dfu-file=${dfu_file}" >> $GITHUB_OUTPUT
-
-        cat $GITHUB_OUTPUT
+        runuser -u hostusr -- bash -lc "${{ github.action_path }}/build.sh ${{ inputs.app-build-command }} ${{ inputs.build-dfu }} ${{ steps.identify.outputs.project }}"
 
 outputs:
   project-name:
