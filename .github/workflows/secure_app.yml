@@ -98,8 +98,6 @@ jobs:
       artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
       dev-app: ${{ steps.duplicate_build_output.outputs.dev-app }}
       prod-app: ${{ steps.duplicate_build_output.outputs.prod-app }}
-      # fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
-      # fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
     steps:
       - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
       - name: Build App
