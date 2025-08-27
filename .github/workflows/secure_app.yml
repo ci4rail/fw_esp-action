@@ -96,8 +96,10 @@ jobs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
       artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
-      fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
-      fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
+      dev-app: ${{ steps.duplicate_build_output.outputs.dev-app }}
+      prod-app: ${{ steps.duplicate_build_output.outputs.prod-app }}
+      # fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
+      # fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
     steps:
       - name: setup devcontainer user
         shell: bash
@@ -128,25 +130,54 @@ jobs:
           echo "dev-app=${filename_dev}" >> $GITHUB_OUTPUT
           echo "prod-app=${{ steps.build_app.outputs.app-file }}" >> $GITHUB_OUTPUT
 
-      - name: Sign App for development
+  akv_sign:
+    needs: build
+    runs-on: [self-hosted, linux, x64]
+    steps:
+      - name: Generate signature for development
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
+          binary: ${{ needs.build.outputs.dev-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
           key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
           num_keys: 1
 
+      - name: Generate signature for production
+        id: sign_app_prod
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          binary: ${{ needs.build.outputs.prod-app }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
+          key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
+          num_keys: 1
+
+  esp_sign:
+    needs: [get_builder, akv_sign]
+    runs-on: [self-hosted, linux, x64]
+    container:
+      image: ${{ needs.get_builder.outputs.builder-image }}
+      options: -v /runner:/runner
+    outputs:
+      fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
+      fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
+    steps:
+      - name: Sign App for development
+        id: sign_app_dev
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          binary: ${{ needs.build.outputs.dev-app }}
+          key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
+          num_keys: 1
       - name: Sign App for production
         id: sign_app_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
-          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
-          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
-          azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
+          binary: ${{ needs.build.outputs.prod-app }}
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
 
@@ -175,7 +206,7 @@ jobs:
           version: ${{ steps.build_app.outputs.version }}
 
   upload:
-    needs: build
+    needs: [build, esp_sign]
     runs-on: [self-hosted, linux, x64]
     outputs:
       artifact-id: ${{ steps.upload_artifact.outputs.artifact-id }}
@@ -185,7 +216,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: fwpkg-dev
-          path: ${{ steps.create_fwpkg_dev.outputs.fwpkg-dev }}
+          path: ${{ needs.esp_sign.outputs.fwpkg-dev }}
           retention-days: 14
 
   # Run test in separate job, so that selfhosted runner is not blocked

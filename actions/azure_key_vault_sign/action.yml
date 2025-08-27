@@ -1,10 +1,12 @@
 name: "Sign ESP Binary"
 description: |
-  Sign a ESP binary (bootloader or app) using Azure Key Vault. 
-  After signing, the signed binary is copied over the input binary.
-  For convinience the path of the signed binary is also available as output.
-  If <num_keys> is greater than 1, the output will have multiple signatures appended, 
-  one for each key.
+  Sign the digest of an ESP binary (bootloader or app) using Azure Key Vault. 
+  The action will create signature files, one for each key, named:
+  <binary_file>-signature-0
+  <binary_file>-signature-1
+  ...
+  Or just 
+  <binary_file>-signature if num_keys==1
 inputs:
   binary:
     description: "The binary file (with path) to sign."
@@ -48,15 +50,8 @@ runs:
         tenant-id: ${{ inputs.azure_tenant_id }}
         subscription-id: ${{ inputs.azure_subscription_id }}
 
-
     - name: Sign digest with Key Vault
-      id: sign
+      id: gen_signature
       shell: bash
       run: |
         ${{ github.action_path }}/gen-signatures.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }}"
-        runuser -u hostusr -- bash -lc '${{ github.action_path }}/sign.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }}"'
-
-outputs:
-  signed_binary_path:
-    description: "Path to the signed binary"
-    value: ${{ steps.sign.outputs.signed_binary_path }}
