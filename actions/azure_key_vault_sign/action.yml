@@ -53,6 +53,7 @@ runs:
       id: sign
       shell: bash
       run: |
+        ${{ github.action_path }}/gen-signatures.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }}"
         runuser -u hostusr -- bash -lc '${{ github.action_path }}/sign.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }}"'
 
 outputs:
