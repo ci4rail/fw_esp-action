@@ -14,7 +14,22 @@ if [ -z "$binary_file" ] || [ -z "$num_keys" ] || [ -z "$key_id_base" ]; then
     exit 1
 fi
 
-source /opt/esp/idf/export.sh
+sign_binary_with_esp_secure()
+{
+    binary_file=$1
+    append_opt=$2
+    key_id=$3
+    # sign and verify signature
+    # run in esp-idf python environment
+    source /opt/esp/idf/export.sh
+
+    espsecure.py sign_data --version 2 \
+    --pub-key $(basename $key_id)-pub.pem \
+    --signature $binary_file-signature-$i \
+    $append_opt \
+    -- $binary_file.signed && \
+    espsecure.py verify_signature --version 2 --keyfile $(basename $key_id)-pub.pem $binary_file.signed
+}
 
 digest=$(openssl dgst -sha256 -binary $binary_file | base64 -w0)
 
@@ -44,14 +59,7 @@ for (( i=0; i<num_keys; i++ )); do
     rm -f $(basename "$KEY_ID")-pub.pem
     az keyvault key download --id "$KEY_ID" --file $(basename "$KEY_ID")-pub.pem
 
-    # sign and verify signature
-    # run in esp-idf container, as only there the espsecure.py is available
-    espsecure.py sign_data --version 2 \
-    --pub-key $(basename $KEY_ID)-pub.pem \
-    --signature $binary_file-signature-$i \
-    $append_opt \
-    -- $binary_file.signed && \
-    espsecure.py verify_signature --version 2 --keyfile $(basename $KEY_ID)-pub.pem $binary_file.signed
+    $(sign_binary_with_esp_secure $binary_file $append_opt $KEY_ID)
 
     append_opt="--append_signatures"
 done
