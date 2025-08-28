@@ -44,13 +44,14 @@ for (( i=0; i<num_keys; i++ )); do
     --algorithm PS256 \
     --digest "$digest" --query signature -o tsv)
 
-    echo "$SIG"| base64 -d > ${binary_file}-${signature_suffix}$i
+    echo "$SIG"| base64 -d > ${binary_file}${signature_suffix}-$i
 
-    if [ "$(wc -c < "${binary_file}-${signature_suffix}$i")" -ne 384 ]; then
+    if [ "$(wc -c < "${binary_file}${signature_suffix}-$i")" -ne 384 ]; then
         echo "Unexpected RSA signature length (expected 384 bytes)" >&2
         exit 1
     fi
 
     # download public key
-    az keyvault key download --id "$key_id" --file "${binary_file}-${signature_suffix}pub-${i}.pem"
+    rm -f "${binary_file}${signature_suffix}-pub-${i}.pem"
+    az keyvault key download --id "$key_id" --file "${binary_file}${signature_suffix}-pub-${i}.pem"
 done
