@@ -3,11 +3,11 @@
 # run in the github runner (not devcontainer)
 # generates
 #
-# $binary_file-${signature_suffix}signature-0
-# $binary_file-${signature_suffix}signature-1
+# $binary_file${signature_suffix}-signature-0
+# $binary_file${signature_suffix}-signature-1
 # ...
 # And the public key for each key
-# $binary_file-${signature_suffix}pub-0.pem
+# $binary_file${signature_suffix}-pub-0.pem
 
 # Arguments:
 # $1: binary file to sign
@@ -44,9 +44,10 @@ for (( i=0; i<num_keys; i++ )); do
     --algorithm PS256 \
     --digest "$digest" --query signature -o tsv)
 
-    echo "$SIG"| base64 -d > ${binary_file}${signature_suffix}-$i
+    sig_file=${binary_file}${signature_suffix}-signature-$i
+    echo "$SIG"| base64 -d > $sig_file
 
-    if [ "$(wc -c < "${binary_file}${signature_suffix}-$i")" -ne 384 ]; then
+    if [ "$(wc -c < "$sig_file")" -ne 384 ]; then
         echo "Unexpected RSA signature length (expected 384 bytes)" >&2
         exit 1
     fi
