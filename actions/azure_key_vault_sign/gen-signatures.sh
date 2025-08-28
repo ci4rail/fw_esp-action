@@ -35,7 +35,7 @@ for (( i=0; i<num_keys; i++ )); do
     if [ "$num_keys" -gt 1 ]; then
         key_id="${key_id_base}$i"
     else 
-        key_id="${key_id_base}
+        key_id="${key_id_base}"
     fi
 
     SIG=$(az keyvault key sign \
