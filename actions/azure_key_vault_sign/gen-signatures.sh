@@ -32,7 +32,11 @@ fi
 digest=$(openssl dgst -sha256 -binary ${binary_file} | base64 -w0)
 
 for (( i=0; i<num_keys; i++ )); do
-    key_id="${key_id_base}$i"
+    if [ "$num_keys" -gt 1 ]; then
+        key_id="${key_id_base}$i"
+    else 
+        key_id="${key_id_base}
+    fi
 
     SIG=$(az keyvault key sign \
     --id "$key_id" \
