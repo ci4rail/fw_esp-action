@@ -57,4 +57,4 @@ runs:
       id: gen_signature
       shell: bash
       run: |
-        ${{ github.action_path }}/gen-signatures.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }} ${{ inputs.signature-suffix }}"
+        ${{ github.action_path }}/gen-signatures.sh "${{ inputs.binary }}" "${{ inputs.num_keys }}"  "${{ inputs.key_id_base }}" "${{ inputs.signature-suffix }}"
