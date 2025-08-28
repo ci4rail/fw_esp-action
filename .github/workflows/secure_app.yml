@@ -191,14 +191,14 @@ jobs:
       - shell: bash
         id: duplicate_build_output
         run: |
-          runuser -u hostusr -- bash -lc 'cd esp-sign && \
+          runuser -u hostusr -- bash -lc 'cd esp-sign &&
+            sudo chown hostusr:hostusr * . && \
             ls -la && \
             filename_dev=${{ needs.build.outputs.app-file }} &&\
             filename_dev=${filename_dev%.*}-dev.bin && echo $filename_dev &&\
             cp ${{ needs.build.outputs.app-file }} $filename_dev &&\
             echo "dev-app=esp-sign/$filename_dev" >> $GITHUB_OUTPUT &&\
             echo "prod-app=esp-sign/${{ needs.build.outputs.app-file }}" >> $GITHUB_OUTPUT &&\
-            sudo chown hostusr:hostusr * &&\
             ls -l'
       - name: Sign App for development
         id: sign_app_dev
