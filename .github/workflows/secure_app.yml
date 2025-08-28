@@ -177,33 +177,39 @@ jobs:
       fwpkg-dev: ${{ steps.create_fwpkg_dev_var.outputs.fwpkg-dev }}
       fwpkg: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
     steps:
+      - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
       - name: Download signatures
         uses: actions/download-artifact@v4
         with:
           name: signatures
           path: esp-sign
+      - name: Download build files
+        uses: actions/download-artifact@v4
+        with:
+          name: build-outputs
+          path: esp-sign
       - shell: bash
         id: duplicate_build_output
         run: |
-          cd akv-sign
+          cd esp-sign
           filename_dev=${{ needs.build.outputs.app-file }}
           filename_dev=${filename_dev%.*}-dev.bin
           cp ${{ needs.build.outputs.app-file }} $filename_dev
-          echo "dev-app=akv-sign/$filename_dev" >> $GITHUB_OUTPUT
-          echo "prod-app=akv-sign/${{ needs.build.outputs.app-file }}" >> $GITHUB_OUTPUT
-      - uses: ci4rail/fw_esp-action/actions/setup-devcontainer@v10
+          echo "dev-app=esp-sign/$filename_dev" >> $GITHUB_OUTPUT
+          echo "prod-app=esp-sign/${{ needs.build.outputs.app-file }}" >> $GITHUB_OUTPUT
+          ls -l
       - name: Sign App for development
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/esp_sign@v10
         with:
-          binary: ${{ needs.build.outputs.dev-app }}
+          binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
           key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
           num_keys: 1
       - name: Sign App for production
         id: sign_app_prod
         uses: ci4rail/fw_esp-action/actions/esp_sign@v10
         with:
-          binary: ${{ needs.build.outputs.prod-app }}
+          binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
 
@@ -212,7 +218,7 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
         with:
           output-file-suffix: -dev
-          app-binary: ${{ needs.build.outputs.dev-app }}
+          app-binary: ${{ steps.duplicate_build_output.outputs.dev-app }}
           project-name: ${{ needs.build.outputs.project-name }}
           version: ${{ needs.build.outputs.version }}
 
@@ -227,7 +233,7 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
         with:
           output-file-suffix: -prod
-          app-binary: ${{ needs.build.outputs.prod-app }}
+          app-binary: ${{ steps.duplicate_build_output.outputs.prod-app }}
           project-name: ${{ needs.build.outputs.project-name }}
           version: ${{ needs.build.outputs.version }}
 
