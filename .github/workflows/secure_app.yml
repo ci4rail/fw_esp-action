@@ -191,7 +191,7 @@ jobs:
       - shell: bash
         id: duplicate_build_output
         run: |
-          chown hostusr:hostusr * .
+          chown hostusr * .
           runuser -u hostusr -- bash -lc 'cd esp-sign &&
             ls -la && \
             filename_dev=${{ needs.build.outputs.app-file }} &&\
