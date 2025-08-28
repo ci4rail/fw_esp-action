@@ -19,15 +19,16 @@ set -x
 set -e
 set -o pipefail
 
+# check number of args
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <binary_file> <num_keys> <key_id_base> <signature_suffix>"
+    exit 1
+fi
+
 binary_file=$1
 num_keys=$2
 key_id_base=$3
 signature_suffix=$4
-
-if [ -z "$binary_file" ] || [ -z "$num_keys" ] || [ -z "$key_id_base" ] || [ -z "$signature_suffix" ]; then
-    echo "Error: Missing required arguments"
-    exit 1
-fi
 
 digest=$(openssl dgst -sha256 -binary ${binary_file} | base64 -w0)
 
