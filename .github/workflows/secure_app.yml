@@ -70,6 +70,8 @@ on:
       minio-secret-key:
         description: "Secret key for minio"
         required: true
+env:
+  runner_user: 1001:1001
 
 jobs:
   # execute steps directly in runner
@@ -93,7 +95,9 @@ jobs:
     runs-on: [self-hosted, linux, x64]
     container:
       image: ${{ needs.get_builder.outputs.builder-image }}
-      options: -v /runner:/runner
+      options: >
+        -v /runner:/runner
+        -u ${{ env.runner_user }}
     outputs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}

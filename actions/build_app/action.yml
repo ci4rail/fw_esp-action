@@ -25,7 +25,7 @@ runs:
       shell: bash
       id: build
       run: |
-        runuser -u hostusr -- bash -lc '${{ github.action_path }}/build.sh "${{ inputs.app-build-command }}"  "${{ inputs.build-dfu }}" "${{ steps.identify.outputs.project }}"'
+        ${{ github.action_path }}/build.sh "${{ inputs.app-build-command }}"  "${{ inputs.build-dfu }}" "${{ steps.identify.outputs.project }}"
 
 outputs:
   project-name:
