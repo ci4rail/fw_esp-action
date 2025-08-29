@@ -128,8 +128,8 @@ jobs:
             filename_dev=${{ steps.build_app.outputs.app-file-path }}
             filename_dev=${filename_dev%.*}-dev.bin && echo $filename_dev
             cp ${{ steps.build_app.outputs.app-file-path }} $filename_dev
-            echo "dev-app=esp-sign/$filename_dev" >> $GITHUB_OUTPUT
-            echo "prod-app=esp-sign/${{ steps.build_app.outputs.app-file-path }}" >> $GITHUB_OUTPUT
+            echo "dev-app=$filename_dev" >> $GITHUB_OUTPUT
+            echo "prod-app=${{ steps.build_app.outputs.app-file-path }}" >> $GITHUB_OUTPUT
 
       - name: Sign development image with espsecure 
         id: sign_dev_espsecure
