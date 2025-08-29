@@ -98,18 +98,10 @@ jobs:
       app-file: ${{ steps.build_app.outputs.app-file }}
 
     steps:
-      - name: Install AZ CLI
-        shell: bash
-        run: |
-          if ! command -v az &> /dev/null; then
-              echo "Azure CLI not found. Installing..." >&2
-              curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
-          else
-              echo "Azure CLI is already installed." >&2
-          fi
-
-      - name: build
-        shell: bash
-        run: |
-          docker run -u $(id -u):$(id -g) --rm -v $PWD:/workspace  /workspace \
-            ${{ needs.get_builder.outputs.builder-image }} bash -c "source /opt/esp/idf/export.sh && ls -l && pwd && make build-secure"
+      - name: Build App
+        id: build_app
+        uses: ci4rail/fw_esp-action/actions/build_app@v10        
+        with:
+          devcontainer-image: ${{ needs.get_builder.outputs.builder-image }}
+          app-build-command: make build-secure
+          build-dfu: ${{ inputs.build-dfu }}
