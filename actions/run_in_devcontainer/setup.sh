@@ -14,6 +14,7 @@ docker rm -f ${CONTAINER_NAME}
 docker run --name devc -d --entrypoint tail \
  --name ${CONTAINER_NAME} \
  -v $PWD:/workspace \
+ -v /runner:/runner \
  -w /workspace \
  ${image} \
  -f /dev/null
