@@ -5,7 +5,7 @@
 image=$1
 command=$2
 
-docker run 
+docker run \
     -u $(id -u):$(id -g) \
     --rm \
     -v $PWD:/workspace \
