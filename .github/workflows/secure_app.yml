@@ -99,7 +99,8 @@ jobs:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
-      - shell: bash
+      - name: Duplicate Build Output for Dev and Prod
+        shell: bash
         id: duplicate_build
         run: |
             filename_dev=${{ steps.build_app.outputs.app-file-path }}
