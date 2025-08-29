@@ -56,7 +56,12 @@ on:
         description: "Device id as listed in test schedulers config file to run the test on test station"
         type: string
         required: true
-      
+      target-commitish:
+        description: "The commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Default: the repository's default branch (usually main)."
+        type: string
+        required: false
+        default: ""
+
     secrets:
       access-token:
         description: "Personal access token for private repos"
@@ -79,6 +84,8 @@ jobs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
       fwpkg-artifact-id: ${{ steps.upload_fwpkg.outputs.artifact-id }}
+      fwpkg-dev: ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
+      fwpkg-prod: ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
 
     steps:
       - name: Checkout repository
@@ -202,3 +209,21 @@ jobs:
           request-timeout: ${{ inputs.teststation-request-timeout }}
           minio_access_key: ${{ secrets.minio-access-key }}
           minio_secret_key: ${{ secrets.minio-secret-key }}
+
+  release:
+    needs: [build, test]
+    if: ${{ always() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download firmware packages
+        uses: actions/download-artifact@v4
+        with:
+          name: fwpkg
+          path: ./artifacts
+      - name: Create Release in this Repo
+        uses: ci4rail/fw_esp-action/actions/create_release@v10
+        with:
+          target_commitish: ${{ inputs.target-commitish }}
+          assets: |
+            artifacts/${{ needs.build.outputs.fwpkg-dev }}
+            artifacts/${{ needs.build.outputs.fwpkg-prod }}
