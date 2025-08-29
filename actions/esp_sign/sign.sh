@@ -13,6 +13,8 @@ binary_file=$1
 num_keys=$2
 key_id_base=$3
 
+ls -l build*
+
 if [ -z "$binary_file" ] || [ -z "$num_keys" ] || [ -z "$key_id_base" ]; then
     echo "Error: Missing required arguments"
     exit 1
