@@ -103,7 +103,7 @@ jobs:
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: akv-sign/${{ steps.build_app.outputs.app-file }}
+          binary: ${{ steps.build_app.outputs.app-file-path }}
           signature-suffix: -dev
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
@@ -111,3 +111,17 @@ jobs:
           key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
           num_keys: 1
 
+      - name: Generate signature for production
+        id: sign_app_prod
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          binary: ${{ steps.build_app.outputs.app-file-path }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
+          key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
+          num_keys: 1
+
+      - shell: bash
+        run: |
+          ls -lR build*

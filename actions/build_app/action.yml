@@ -24,7 +24,7 @@ runs:
         echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
         ${{ github.action_path }}/../run_in_devcontainer/setup.sh "${{ inputs.devcontainer-image}}" "$(id -u)" "$(id -g)"
         ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ inputs.app-build-command }}"  
-        ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${{ steps.identify.outputs.project }}"
+        ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${project}"
 
 outputs:
   project-name:
