@@ -78,7 +78,7 @@ jobs:
     outputs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
-      app-file: ${{ steps.build_app.outputs.app-file }}
+      fwpkg-artifact-id: ${{ steps.upload_fwpkg.outputs.artifact-id }}
 
     steps:
       - name: Checkout repository
@@ -165,3 +165,40 @@ jobs:
           app-binary: ${{ steps.sign_prod_espsecure.outputs.signed-binary-path }}
           project-name: ${{ steps.build_app.outputs.project-name }}
           version: ${{ steps.build_app.outputs.version }}
+
+      - name: Upload firmware packages to artifact storage
+        id: upload_fwpkg
+        uses: actions/upload-artifact@v4
+        with:
+          name: fwpkg-dev
+          path: |
+            ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
+            ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
+          retention-days: 2
+
+  # Execute steps in an github runner (not selfhosted)
+  # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
+  test:
+    if: inputs.test-name != ''
+    needs: [build, upload]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Test firmware package for development
+        uses: ci4rail/teststation-action@v5
+        with:
+          pipeline-name: "${{ github.run_id }}"
+          mqtt-broker-url: "${{ inputs.teststation-broker }}"
+          test-name: ${{ inputs.test-name }}
+          artifact-override: |
+            {
+              \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
+              \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ needs.build.outputs.fwpkg-artifact-id }}/zip\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
+            }
+          access-token: ${{ secrets.access-token }}
+          tailscale-key: ${{ secrets.tailscale-key }}
+          request-timeout: ${{ inputs.teststation-request-timeout }}
+          minio_access_key: ${{ secrets.minio-access-key }}
+          minio_secret_key: ${{ secrets.minio-secret-key }}
