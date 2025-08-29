@@ -25,7 +25,7 @@ runs:
       shell: bash
       id: build
       run: |
-        ${{ github.action_path }}/build.sh "${{ inputs.app-build-command }}"  "${{ inputs.build-dfu }}" "${{ steps.identify.outputs.project }}"
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ inputs.app-build-command }}"  
 
 outputs:
   project-name:

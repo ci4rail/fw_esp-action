@@ -111,5 +111,5 @@ jobs:
       - name: build
         shell: bash
         run: |
-          docker run -u $(id -u):$(id -g) --rm -v $PWD:/workspace -w /workspace \
+          docker run -u $(id -u):$(id -g) --rm -v $PWD:/workspace  /workspace \
             ${{ needs.get_builder.outputs.builder-image }} bash -c "source /opt/esp/idf/export.sh && ls -l && pwd && make build-secure"
