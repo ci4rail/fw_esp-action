@@ -181,6 +181,7 @@ jobs:
   release:
     # needs: [build, test]
     # if: ${{ always() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
+    needs: [build, sign]
     runs-on: ubuntu-latest
     steps:
       - name: Download firmware packages

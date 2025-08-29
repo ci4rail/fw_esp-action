@@ -51,7 +51,7 @@ EOF
 
 cat ${tmp_dir}/manifest.json
 
-pkg_name=fw-${short_hwname}-${fw_variant}-${fw_version}${output_file_suffix}.fwpkg
+pkg_name=fw-${short_hwname}-${fw_variant}-${fw_version}-${output_file_suffix}.fwpkg
 
 tar cf ${pkg_name} -C ${tmp_dir} . --owner=root --group=root
 
