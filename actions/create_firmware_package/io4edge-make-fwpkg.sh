@@ -3,7 +3,7 @@
 set -o errexit   # abort on nonzero exitstatus
 set -o pipefail  # don't hide errors within pipes
 
-if [ -z ${6} ]; then
+if [ "$#" -ne 6 ]; then
   echo "Usage: ${0} <fw-binary> <full-hw-name> <fw-variant> <fw-version> <major-revs> <output-file-suffix>"
   exit 1
 fi
@@ -18,7 +18,7 @@ full_hwname=${2}
 fw_variant=${3}
 fw_version=${4}
 major_revs="[${5}]"
-output_file=${6}
+output_file_suffix=${6}
 
 # strip away everything before first '-'
 short_hwname=$(echo ${full_hwname} | cut -d - -f 2)

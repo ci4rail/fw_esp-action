@@ -48,4 +48,4 @@ for (( i=0; i<num_keys; i++ )); do
 done
 
 cp $binary_file.signed $binary_file
-echo "signed-binary-path=$binary_file" >> "$GITHUB_OUTPUT"
+

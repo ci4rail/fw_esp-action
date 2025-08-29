@@ -30,4 +30,4 @@ runs:
 outputs:
   signed-binary-path:
     description: "Path to the signed binary"
-    value: ${{ steps.sign.outputs.signed-binary-path }}
+    value: ${{ inputs.binary }}

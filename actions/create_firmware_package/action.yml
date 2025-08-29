@@ -30,12 +30,12 @@ runs:
         variant=$(echo ${{ inputs.project-name }} | cut -d - -f 3- )
 
         ${{ github.action_path }}/io4edge-make-fwpkg.sh \
-          ${{ inputs.app-binary }} \
-          ${PKG_FULL_HW_NAME}\
-          ${variant} \
-          ${{ inputs.version }} \
-          ${PKG_COMPATIBLE_MAJOR_REVS} \
-          ${{ inputs.output-file-suffix }}"
+          "${{ inputs.app-binary }}" \
+          "${PKG_FULL_HW_NAME}" \
+          "${variant}" \
+          "${{ inputs.version }}" \
+          "${PKG_COMPATIBLE_MAJOR_REVS}" \
+          "${{ inputs.output-file-suffix }}"
 
 outputs:
   fwpkg:

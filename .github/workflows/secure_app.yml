@@ -147,3 +147,21 @@ jobs:
           binary: ${{ steps.duplicate_build.outputs.prod-app }}
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
+
+      - name: Create firmware package for development
+        id: create_fwpkg_dev
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        with:
+          output-file-suffix: -dev
+          app-binary: ${{ steps.sign_dev_espsecure.outputs.signed-binary-path }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
+
+      - name: Create firmware package for production
+        id: create_fwpkg_prod
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        with:
+          output-file-suffix: ""
+          app-binary: ${{ steps.sign_prod_espsecure.outputs.signed-binary-path }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
