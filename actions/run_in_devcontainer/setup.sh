@@ -16,7 +16,9 @@ docker run --name devc -d --entrypoint tail \
  ${image} \
  -f /dev/null
 
- docker exec ${CONTAINER_NAME} bash -c '
+echo "UID=${uid} GID=${gid}"
+
+docker exec ${CONTAINER_NAME} bash -c '
     groupadd -g "$gid" hostgrp && \
     useradd -M -s /bin/bash -u "$uid" -g hostgrp hostusr && \
     mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr'
