@@ -7,7 +7,9 @@ uid=$2
 gid=$3
 CONTAINER_NAME=esp-devc
 
- docker run --name devc -d --entrypoint tail \
+docker rm -f ${CONTAINER_NAME}
+
+docker run --name devc -d --entrypoint tail \
  --name ${CONTAINER_NAME} \
  -v $PWD:/workspace \
  -w /workspace \
