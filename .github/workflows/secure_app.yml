@@ -149,39 +149,51 @@ jobs:
 
   # Execute steps in an github runner (not selfhosted)
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
-  # test-staging:
-  #   if: inputs.test-name != ''
-  #   needs: [build, sign]
-  #   runs-on: ubuntu-latest
-  #   strategy:
-  #     matrix:
-  #       env: [staging]   # only staging
-  #   environment: ${{ matrix.env }}    
-  #   steps:
-  #     - name: Test firmware package for development
-  #       uses: ci4rail/teststation-action@v5
-  #       with:
-  #         pipeline-name: "${{ github.run_id }}"
-  #         mqtt-broker-url: "${{ inputs.teststation-broker }}"
-  #         test-name: ${{ inputs.test-name }}
-  #         artifact-override: |
-  #           {
-  #             \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
-  #             \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
-  #             \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
-  #             \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ needs.build.outputs.fwpkg-artifact-id }}/zip\",
-  #             \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
-  #           }
-  #         access-token: ${{ secrets.access-token }}
-  #         tailscale-key: ${{ secrets.tailscale-key }}
-  #         request-timeout: ${{ inputs.teststation-request-timeout }}
-  #         minio_access_key: ${{ secrets.minio-access-key }}
-  #         minio_secret_key: ${{ secrets.minio-secret-key }}
+  test-staging:
+    if: inputs.test-name != ''
+    needs: [build, sign]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        env: [staging]   # only staging
+    environment: ${{ matrix.env }}    
+    steps:
+      - name: Resolve artifact ID by name
+        id: art
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NAME: fwpkg-staging
+        run: |
+          id=$(gh api \
+            repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts \
+            -F name="$NAME" \
+            -q '.artifacts[0].id // empty')
+          test -n "$id" || { echo "artifact '$NAME' not found"; exit 1; }
+          echo "id=$id" >> "$GITHUB_OUTPUT"
+          
+      - name: Test firmware package for development
+        uses: ci4rail/teststation-action@v5
+        with:
+          pipeline-name: "${{ github.run_id }}"
+          mqtt-broker-url: "${{ inputs.teststation-broker }}"
+          test-name: ${{ inputs.test-name }}
+          artifact-override: |
+            {
+              \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
+              \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.art.outputs.id }}/zip\",
+              \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
+            }
+          access-token: ${{ secrets.access-token }}
+          tailscale-key: ${{ secrets.tailscale-key }}
+          request-timeout: ${{ inputs.teststation-request-timeout }}
+          minio_access_key: ${{ secrets.minio-access-key }}
+          minio_secret_key: ${{ secrets.minio-secret-key }}
 
   release:
-    # needs: [build, test]
-    # if: ${{ always() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
-    needs: [build, sign]
+    needs: [build, test-staging]
+    if: ${{ always() && (needs.test.result == 'success' || needs.test.result == 'skipped') }}
     runs-on: ubuntu-latest
     steps:
       - name: Download firmware packages
