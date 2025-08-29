@@ -31,16 +31,18 @@ for (( i=0; i<num_keys; i++ )); do
         key_id="${key_id_base}"
     fi
 
+    pubfile=${binary_file}${signature_suffix}-pub-${i}.pem
+
     espsecure.py sign_data --version 2 \
-    --pub-key $(basename $key_id)-pub.pem \
+    --pub-key $pubfile \
     --signature ${binary_file}-signature-$i \
     $append_opt \
     -- ${binary_file}.signed && \
-    
-    espsecure.py verify_signature --version 2 --keyfile $(basename $key_id)-pub.pem ${binary_file}.signed
+
+    espsecure.py verify_signature --version 2 --keyfile $pubfile ${binary_file}.signed
 
     append_opt="--append_signatures"
 done
 
 cp $binary_file.signed $binary_file
-echo "signed_binary_path=$binary_file" >> "$GITHUB_OUTPUT"
+echo "signed-binary-path=$binary_file" >> "$GITHUB_OUTPUT"

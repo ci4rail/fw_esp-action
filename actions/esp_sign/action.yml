@@ -28,6 +28,6 @@ runs:
         ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ github.action_path }}/sign.sh ${{ inputs.binary }} ${{ inputs.num_keys }} ${{ inputs.key_id_base }}"
 
 outputs:
-  signed_binary_path:
+  signed-binary-path:
     description: "Path to the signed binary"
-    value: ${{ steps.sign.outputs.signed_binary_path }}
+    value: ${{ steps.sign.outputs.signed-binary-path }}

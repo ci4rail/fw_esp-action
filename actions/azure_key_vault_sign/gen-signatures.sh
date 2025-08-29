@@ -53,6 +53,7 @@ for (( i=0; i<num_keys; i++ )); do
     fi
 
     # download public key
-    rm -f "${binary_file}${signature_suffix}-pub-${i}.pem"
-    az keyvault key download --id "$key_id" --file "${binary_file}${signature_suffix}-pub-${i}.pem"
+    pubfile=${binary_file}${signature_suffix}-pub-${i}.pem
+    rm -f "$pubfile"
+    az keyvault key download --id "$key_id" --file "$pubfile"
 done
