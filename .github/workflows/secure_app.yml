@@ -72,24 +72,7 @@ on:
         required: true
 
 jobs:
-  # execute steps directly in runner
-  get_builder:
-    runs-on: [self-hosted, linux, x64]
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-          token: ${{ secrets.access-token }}
-      - name: Get builder image
-        id: get_builder
-        uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
-    outputs:
-      builder-image: ${{ steps.get_builder.outputs.builder-image }}
-
-  # execute steps in devcontainer
   build:
-    needs: get_builder
     runs-on: [self-hosted, linux, x64]
 
     outputs:
@@ -98,12 +81,21 @@ jobs:
       app-file: ${{ steps.build_app.outputs.app-file }}
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ secrets.access-token }}
+
+      - name: Get builder image
+        id: get_builder
+        uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
 
 
       - name: Build App
         id: build_app
         uses: ci4rail/fw_esp-action/actions/build_app@v10        
         with:
-          devcontainer-image: ${{ needs.get_builder.outputs.builder-image }}
+          devcontainer-image: ${{ steps.get_builder.outputs.builder-image }}
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
