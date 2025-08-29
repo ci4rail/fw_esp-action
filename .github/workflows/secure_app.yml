@@ -122,10 +122,19 @@ jobs:
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
 
+      - shell: bash
+        id: duplicate_build
+        run: |
+            filename_dev=${{ steps.build_app.outputs.app-file-path }}
+            filename_dev=${filename_dev%.*}-dev.bin && echo $filename_dev
+            cp ${{ steps.build_app.outputs.app-file-path }} $filename_dev
+            echo "dev-app=esp-sign/$filename_dev" >> $GITHUB_OUTPUT
+            echo "prod-app=esp-sign/${{ steps.build_app.outputs.app-file-path }}" >> $GITHUB_OUTPUT
+
       - name: Sign development image with espsecure 
         id: sign_dev_espsecure
         uses: ci4rail/fw_esp-action/actions/esp_sign@v10
         with:
-          binary: ${{ steps.build_app.outputs.app-file-path }}
+          binary: ${{ steps.duplicate_build.outputs.dev-app }}
           key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
           num_keys: 1
