@@ -3,6 +3,8 @@
 # $1 = image
 
 image=$1
+uid=$2
+gid=$3
 CONTAINER_NAME=esp-devc
 
  docker run --name devc -d --entrypoint tail \
@@ -13,6 +15,6 @@ CONTAINER_NAME=esp-devc
  -f /dev/null
 
  docker exec ${CONTAINER_NAME} bash -c '
-    groupadd -g "$(id -g)" hostgrp && \
-    useradd -M -s /bin/bash -u "$(id -u)" -g hostgrp hostusr && \
+    groupadd -g "$gid" hostgrp && \
+    useradd -M -s /bin/bash -u "$uid" -g hostgrp hostusr && \
     mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr'
