@@ -97,7 +97,7 @@ jobs:
       # we know that runner user has uid 1001 in dind runner
       options: >
         -v /runner:/runner
-        -u 1001:1001
+        -u 1001
     outputs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
