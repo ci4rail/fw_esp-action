@@ -15,20 +15,13 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - name: Get project and filename
-      shell: bash
-      id: identify
-      env:
-        EVENT_NAME: ${{ github.event_name }}
-      run: |
-        project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
-        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
-
     - name: Build App
       shell: bash
       id: build
       run: |
         rm -rf build*
+        project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
+        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
         ${{ github.action_path }}/../run_in_devcontainer/setup.sh "${{ inputs.devcontainer-image}}" "$(id -u)" "$(id -g)"
         ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ inputs.app-build-command }}"  
         ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${{ steps.identify.outputs.project }}"
@@ -36,7 +29,7 @@ runs:
 outputs:
   project-name:
     description: "Project name"
-    value: ${{ steps.identify.outputs.project }}
+    value: ${{ steps.build.outputs.project }}
   version:
     description: "App version"
     value: ${{ steps.build.outputs.version }}
