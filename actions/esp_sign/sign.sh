@@ -33,11 +33,12 @@ for (( i=0; i<num_keys; i++ )); do
         key_id="${key_id_base}"
     fi
 
-    pubfile=${binary_file}${signature_suffix}-pub-${i}.pem
+    pubfile=${binary_file}-pub-${i}.pem
+    sig_file=${binary_file}-signature-$i
 
     espsecure.py sign_data --version 2 \
     --pub-key $pubfile \
-    --signature ${binary_file}-signature-$i \
+    --signature $sig_file \
     $append_opt \
     -- ${binary_file}.signed && \
 

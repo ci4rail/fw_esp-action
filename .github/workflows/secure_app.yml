@@ -99,12 +99,20 @@ jobs:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
+      - shell: bash
+        id: duplicate_build
+        run: |
+            filename_dev=${{ steps.build_app.outputs.app-file-path }}
+            filename_dev=${filename_dev%.*}-dev.bin && echo $filename_dev
+            cp ${{ steps.build_app.outputs.app-file-path }} $filename_dev
+            echo "dev-app=$filename_dev" >> $GITHUB_OUTPUT
+            echo "prod-app=${{ steps.build_app.outputs.app-file-path }}" >> $GITHUB_OUTPUT
+
       - name: Generate signature for development
         id: sign_app_dev
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: ${{ steps.build_app.outputs.app-file-path }}
-          signature-suffix: -dev
+          binary: ${{ steps.duplicate_build.outputs.dev-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
@@ -115,21 +123,13 @@ jobs:
         id: sign_app_prod
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
         with:
-          binary: ${{ steps.build_app.outputs.app-file-path }}
+          binary: ${{ steps.duplicate_build.outputs.prod-app }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
           key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
 
-      - shell: bash
-        id: duplicate_build
-        run: |
-            filename_dev=${{ steps.build_app.outputs.app-file-path }}
-            filename_dev=${filename_dev%.*}-dev.bin && echo $filename_dev
-            cp ${{ steps.build_app.outputs.app-file-path }} $filename_dev
-            echo "dev-app=$filename_dev" >> $GITHUB_OUTPUT
-            echo "prod-app=${{ steps.build_app.outputs.app-file-path }}" >> $GITHUB_OUTPUT
 
       - name: Sign development image with espsecure 
         id: sign_dev_espsecure
@@ -137,4 +137,12 @@ jobs:
         with:
           binary: ${{ steps.duplicate_build.outputs.dev-app }}
           key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id }}
+          num_keys: 1
+
+      - name: Sign production image with espsecure 
+        id: sign_prod_espsecure
+        uses: ci4rail/fw_esp-action/actions/esp_sign@v10
+        with:
+          binary: ${{ steps.duplicate_build.outputs.prod-app }}
+          key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id }}
           num_keys: 1
