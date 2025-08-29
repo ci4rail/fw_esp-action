@@ -28,7 +28,8 @@ runs:
       shell: bash
       id: build
       run: |
-        ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ inputs.devcontainer-image}}"  "${{ inputs.app-build-command }}"  
+        ${{ github.action_path }}/../run_in_devcontainer/setup.sh "${{ inputs.devcontainer-image}}"
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ inputs.app-build-command }}"  
 
 outputs:
   project-name:
