@@ -4,7 +4,7 @@
 # $1: build-dfu
 # $2: project-name
 
-if [ -z "$3" ]; then
+if [ -z "$2" ]; then
   echo "Error: too few arguments"
   exit 1
 fi
