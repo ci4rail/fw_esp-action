@@ -170,7 +170,7 @@ jobs:
         id: upload_fwpkg
         uses: actions/upload-artifact@v4
         with:
-          name: fwpkg-dev
+          name: fwpkg
           path: |
             ${{ steps.create_fwpkg_dev.outputs.fwpkg }}
             ${{ steps.create_fwpkg_prod.outputs.fwpkg }}
@@ -180,7 +180,7 @@ jobs:
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
     if: inputs.test-name != ''
-    needs: [build, upload]
+    needs: build
     runs-on: ubuntu-latest
     steps:
       - name: Test firmware package for development
