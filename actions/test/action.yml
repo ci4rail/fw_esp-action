@@ -35,6 +35,12 @@ inputs:
   tailscale-key:
     description: "a reusable tailscale key"
     required: true
+  project-name:
+    description: "Project name"
+    required: true
+  version:
+    description: "Firmware version"
+    required: true
 
 runs:
   using: "composite"
@@ -63,8 +69,8 @@ runs:
         test-name: ${{ inputs.test-name }}
         artifact-override: |
           {
-            \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
-            \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
+            \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ inputs.project-name }}\",
+            \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ inputs.version }}\",
             \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"ci4rail-minio\",
             \"desired_versions.${{ inputs.test-device-name }}.source.bucket\": \"${{ inputs.minio-bucket }}\",
             \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
