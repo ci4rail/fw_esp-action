@@ -48,6 +48,25 @@ on:
         type: string
         required: false
         default: "esp-fw-testing"
+      bootloader-repo:
+        description: "Repository where to get bootloader from"
+        type: string
+        required: true
+      bootloader-release-tag:
+        description: "Release tag for the bootloader"
+        type: string
+        required: true
+      bootloader-filename:
+        description: "Filename of the bootloader"
+        type: string
+        required: false
+        default: "bootloader.bin"
+      public-release-repo:
+        description: "Public release repository. (don't publish if empty)"
+        type: string
+        required: false
+        default: ""
+
     secrets:
       access-token:
         description: "Personal access token for private repos"
