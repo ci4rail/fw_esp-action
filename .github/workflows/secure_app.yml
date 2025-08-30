@@ -43,7 +43,11 @@ on:
         type: string
         required: false
         default: ""
-
+      minio-bucket:
+        description: "bucket on minio to push test images to"
+        type: string
+        required: false
+        default: "esp-fw-testing"
     secrets:
       access-token:
         description: "Personal access token for private repos"
@@ -153,47 +157,25 @@ jobs:
     if: inputs.test-name != ''
     needs: [build, sign]
     runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: read
     strategy:
       matrix:
         env: [staging]   # only staging
     environment: ${{ matrix.env }}    
     steps:
-      - name: Resolve artifact ID by name
-        id: art
-        env:
-          GH_TOKEN: ${{ github.token }}
-          NAME: fwpkg-staging
-        run: |
-          # List run artifacts and select by name
-          id=$(gh api \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
-            "/repos/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts" \
-            -q ".artifacts[] | select(.name==\"$NAME\") | .id")
-          test -n "$id" || { echo "artifact '$NAME' not found in run ${{ github.run_id }}"; exit 1; }
-          echo "id=$id" >> "$GITHUB_OUTPUT"
-
-      - name: Test firmware package for development
-        uses: ci4rail/teststation-action@v5
+      - name: Excecute Test on Test station
+        uses: ci4rail/fw_esp-action/actions/test@v10
+        id: test
         with:
-          pipeline-name: "${{ github.run_id }}"
-          mqtt-broker-url: "${{ inputs.teststation-broker }}"
+          teststation-broker: ${{ inputs.teststation-broker }}
+          teststation-master-topic: ${{ inputs.teststation-master-topic }}
+          teststation-request-timeout: ${{ inputs.teststation-request-timeout }}
           test-name: ${{ inputs.test-name }}
-          artifact-override: |
-            {
-              \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ needs.build.outputs.project-name }}\",
-              \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ needs.build.outputs.version }}\",
-              \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"github-artifacts\",
-              \"desired_versions.${{ inputs.test-device-name }}.source.url\": \"https://api.github.com/repos/${{ github.repository }}/actions/artifacts/${{ steps.art.outputs.id }}/zip\",
-              \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
-            }
+          test-device-name: ${{ inputs.test-device-name }}
+          minio-access-key: ${{ secrets.minio-access-key }}
+          minio-secret-key: ${{ secrets.minio-secret-key }}
+          minio-bucket: ${{ secrets.minio-bucket }}
           access-token: ${{ secrets.access-token }}
           tailscale-key: ${{ secrets.tailscale-key }}
-          request-timeout: ${{ inputs.teststation-request-timeout }}
-          minio_access_key: ${{ secrets.minio-access-key }}
-          minio_secret_key: ${{ secrets.minio-secret-key }}
 
   release:
     needs: [build, test-staging]
