@@ -173,9 +173,11 @@ jobs:
           test-device-name: ${{ inputs.test-device-name }}
           minio-access-key: ${{ secrets.minio-access-key }}
           minio-secret-key: ${{ secrets.minio-secret-key }}
-          minio-bucket: ${{ secrets.minio-bucket }}
+          minio-bucket: ${{ inputs.minio-bucket }}
           access-token: ${{ secrets.access-token }}
           tailscale-key: ${{ secrets.tailscale-key }}
+          project-name: ${{ needs.build.outputs.project-name }}
+          version: ${{ needs.build.outputs.version }}
 
   release:
     needs: [build, test-staging]
