@@ -21,7 +21,7 @@ runs:
 
         container_name=esp-devc-${{ github.run_id }}
         echo "builder-container-name=${container_name}" >> "$GITHUB_OUTPUT"
-        ${{ github.action_path }}/setup.sh "${{ inputs.devcontainer-image}}" "$(id -u)" "$(id -g)" "${container_name}"  
+        ${{ github.action_path }}/setup.sh "${builder_image}" "$(id -u)" "$(id -g)" "${container_name}"  
 
 outputs:
   builder-container-name:
