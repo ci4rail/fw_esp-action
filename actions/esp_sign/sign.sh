@@ -16,9 +16,6 @@ fi
 
 mapfile -t KEYS < <(printf '%s\n' "$key_ids" | tr -d '\r' | sed '/^[[:space:]]*$/d')
 
-# signing will be done in the .signed file
-cp $binary_file $binary_file.signed
-
 append_opt=""
 
 num_keys=$(ls ${binary_file}-signature-* 2>/dev/null | wc -l)
@@ -32,12 +29,11 @@ for (( i=0; i<num_keys; i++ )); do
     --pub-key $pubfile \
     --signature $sig_file \
     $append_opt \
-    -- ${binary_file}.signed && \
-
-    espsecure.py verify_signature --version 2 --keyfile $pubfile ${binary_file}.signed
+    -- ${binary_file}
+    
+    espsecure.py verify_signature --version 2 --keyfile $pubfile ${binary_file}
 
     append_opt="--append_signatures"
 done
 
-cp $binary_file.signed $binary_file
 

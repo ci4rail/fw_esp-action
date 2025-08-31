@@ -99,3 +99,23 @@ jobs:
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
 
+  release:
+    needs: [build, sign]
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download firmware packages
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bootloader-*
+          path: ./artifacts
+          merge-multiple: true
+
+      - shell: bash
+        run: ls -l artifacts
+
+      - name: Create Release in this Repo
+        uses: ci4rail/fw_esp-action/actions/release@v10
+        with:
+          assets: |
+            artifacts/*
