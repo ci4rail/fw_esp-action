@@ -113,6 +113,8 @@ jobs:
           name: build_output
           path: |
             ${{ steps.build_app.outputs.app-file-path }}
+            ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
+            ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
 
       - name: tear down devcontainer
         if: ${{ always() }}
@@ -215,14 +217,27 @@ jobs:
     if: ${{ always() && (github.ref_type == 'tag') && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') && (needs.build.result == 'success') && (needs.sign.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Download firmware packages
+      - name: Download bootloader
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: ${{ inputs.bootloader-repo }}
+          tag: ${{ inputs.bootloader-release-tag }}
+          fileName: '*.bin'
+          token: ${{ inputs.access-token }}
+          out-file-path: ./artifacts
+
+      - name: Download partition table and ota data
         uses: actions/download-artifact@v4
+        with:
+          name: build_output
+          path: ./artifacts
+
+      - name: Download firmware packages
+        uses: actions/download-artifact@v5
         with:
           pattern: fwpkg-*
           path: ./artifacts
           merge-multiple: true
-
-
 
       - shell: bash
         run: ls -l artifacts
