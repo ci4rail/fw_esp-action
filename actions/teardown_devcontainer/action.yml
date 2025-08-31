@@ -9,5 +9,5 @@ runs:
       id: teardown
       run: |
         container_name=esp-devc-${{ github.run_id }}
-        docker stop ${container_name} || true
+        docker stop -t 1 ${container_name} || true
         docker rm ${container_name} || true

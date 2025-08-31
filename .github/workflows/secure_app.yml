@@ -216,7 +216,7 @@ jobs:
 
   release:
     needs: [build, test-staging]
-    if: ${{ always() && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') }}
+    if: ${{ always() && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') && (needs.build.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       - name: Download firmware packages
