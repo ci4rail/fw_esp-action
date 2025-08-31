@@ -2,34 +2,29 @@
 
 # Arguments:
 # $1: binary file to sign
-# $2: num keys
-# $3: key id base
+# $2: key ids, newline separated
 
 set -x
 set -e
 set -o pipefail
 
 binary_file=$1
-num_keys=$2
-key_id_base=$3
+key_ids=$2
 
-if [ -z "$binary_file" ] || [ -z "$num_keys" ] || [ -z "$key_id_base" ]; then
-    echo "Error: Missing required arguments"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <binary_file> <key_ids>"
     exit 1
 fi
 
+mapfile -t KEYS < <(printf '%s\n' "$key_ids" | sed '/^[[:space:]]*$/d')
 
 # signing will be done in the .signed file
 cp $binary_file $binary_file.signed
 
 append_opt=""
 
-for (( i=0; i<num_keys; i++ )); do
-    if [ "$num_keys" -gt 1 ]; then
-        key_id="${key_id_base}$i"
-    else
-        key_id="${key_id_base}"
-    fi
+for (( i=0; i<${#KEYS[@]}; i++ )); do
+    key_id="${KEYS[$i]}"
 
     pubfile=${binary_file}-pub-${i}.pem
     sig_file=${binary_file}-signature-$i

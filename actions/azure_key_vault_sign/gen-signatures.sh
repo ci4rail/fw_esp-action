@@ -11,31 +11,28 @@
 
 # Arguments:
 # $1: binary file to sign
-# $2: num keys
-# $3: key id base
+# $2: key ids, newline separated
 
 set -x
 set -e
 set -o pipefail
 
 # check number of args
-if [ "$#" -ne 3 ]; then
-    echo "Usage: $0 <binary_file> <num_keys> <key_id_base>"
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <binary_file> <key_ids>"
     exit 1
 fi
 
 binary_file=$1
-num_keys=$2
-key_id_base=$3
+key_ids=$2
+
+mapfile -t KEYS < <(printf '%s\n' "$key_ids" | sed '/^[[:space:]]*$/d')
 
 digest=$(openssl dgst -sha256 -binary ${binary_file} | base64 -w0)
 
-for (( i=0; i<num_keys; i++ )); do
-    if [ "$num_keys" -gt 1 ]; then
-        key_id="${key_id_base}$i"
-    else 
-        key_id="${key_id_base}"
-    fi
+for (( i=0; i<${#KEYS[@]}; i++ )); do
+    key_id="${KEYS[$i]}"
+    echo "Signing with key: $key_id"
 
     SIG=$(az keyvault key sign \
     --id "$key_id" \

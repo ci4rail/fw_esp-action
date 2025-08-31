@@ -9,13 +9,8 @@ inputs:
   binary:
     description: "The binary file (with path) to sign."
     required: true
-  key_id_base:
-    description: "The base ID for the key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
-    required: true
-  num_keys:
-    description: |
-      The number of signing keys to use (at least 1). 
-      The key_id_base will be postfixed with 0, 1, ..., N, if num_keys > 1
+  key_ids:
+    description: "The keys used for signing firmware, newline separated. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g0\\nhttps://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g1"
     required: true
 
 runs:
@@ -25,7 +20,7 @@ runs:
       id: sign
       shell: bash
       run: |
-        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/sign.sh ${{ inputs.binary }} ${{ inputs.num_keys }} ${{ inputs.key_id_base }}"
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/sign.sh ${{ inputs.binary }} ${{ inputs.key_ids }}"
 
 outputs:
   signed-binary-path:

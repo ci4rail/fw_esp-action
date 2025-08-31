@@ -16,7 +16,6 @@ runs:
   steps:
     - name: Release 
       uses: softprops/action-gh-release@v2
-      if: github.ref_type == 'tag'
       with:
         files: ${{ inputs.assets }}
         generate_release_notes: true

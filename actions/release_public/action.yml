@@ -18,7 +18,6 @@ runs:
   using: "composite"
   steps:
     - name: Get release notes from source repo
-      if: github.ref_type == 'tag'
       shell: bash
       id: notes
       run: |
@@ -31,7 +30,6 @@ runs:
 
     - name: Release in public repo
       uses: softprops/action-gh-release@v2
-      if: github.ref_type == 'tag'
       with:
         body_path: ${{ github.workspace }}-RELNOTES.md
         files: ${{ inputs.assets }}
