@@ -19,9 +19,9 @@ jobs:
     runs-on: [self-hosted, linux, x64]
 
     outputs:
-      project-name: ${{ steps.build_app.outputs.project-name }}
-      version: ${{ steps.build_app.outputs.version }}
-      bootloader-file: ${{ steps.build_app.outputs.bootloader-file }}
+      project-name: ${{ steps.build_bootloader.outputs.project-name }}
+      version: ${{ steps.build_bootloader.outputs.version }}
+      bootloader-file: ${{ steps.build_bootloader.outputs.bootloader-file }}
 
     steps:
       - name: Checkout repository
