@@ -26,7 +26,7 @@ fi
 binary_file=$1
 key_ids=$2
 
-mapfile -t KEYS < <(printf '%s\n' "$key_ids" | sed '/^[[:space:]]*$/d')
+mapfile -t KEYS < <(printf '%s\n' "$key_ids" | tr -d '\r' | sed '/^[[:space:]]*$/d')
 
 digest=$(openssl dgst -sha256 -binary ${binary_file} | base64 -w0)
 

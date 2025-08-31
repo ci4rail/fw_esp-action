@@ -16,7 +16,7 @@ if [ "$#" -ne 2 ]; then
     exit 1
 fi
 
-mapfile -t KEYS < <(printf '%s\n' "$key_ids" | sed '/^[[:space:]]*$/d')
+mapfile -t KEYS < <(printf '%s\n' "$key_ids" | tr -d '\r' | sed '/^[[:space:]]*$/d')
 
 # signing will be done in the .signed file
 cp $binary_file $binary_file.signed
@@ -24,8 +24,6 @@ cp $binary_file $binary_file.signed
 append_opt=""
 
 for (( i=0; i<${#KEYS[@]}; i++ )); do
-    key_id="${KEYS[$i]}"
-
     pubfile=${binary_file}-pub-${i}.pem
     sig_file=${binary_file}-signature-$i
 
