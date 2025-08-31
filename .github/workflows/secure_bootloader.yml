@@ -44,3 +44,59 @@ jobs:
       - name: tear down devcontainer
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
+
+
+  sign:
+    needs: build
+    permissions:
+      id-token: write # required for OIDC
+      contents: read
+    runs-on: [self-hosted, linux, x64]
+    strategy:
+      matrix:
+        env:
+          - name: staging
+          - name: production
+    environment: ${{ matrix.env.name }}
+    steps:
+      # we need to checkout repo, as we need devcontainer.json
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start esp-idf Devcontainer
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: build_output
+          path: in/
+
+      - name: Generate signature
+        id: gen_signature
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        with:
+          binary: in/${{ needs.build.outputs.app-file }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ vars.FIRMWARE_SIGNING_AZURE_APP_ID }}
+          key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_IDS }}
+
+      - name: Sign image with espsecure 
+        id: sign
+        uses: ci4rail/fw_esp-action/actions/esp_sign@v10
+        with:
+          binary: in/${{ needs.build.outputs.app-file }}
+          key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_IDS }}
+
+      - name: Upload signed bootloader to artifact storage
+        uses: actions/upload-artifact@v4
+        with:
+          name: bootloader-${{ matrix.env.name }}
+          path: |
+            ${{ steps.sign.outputs.signed-binary-path }}
+          retention-days: 2
+
+      - name: tear down devcontainer
+        if: ${{ always() }}
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
+
