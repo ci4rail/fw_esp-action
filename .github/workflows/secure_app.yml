@@ -56,11 +56,6 @@ on:
         description: "Release tag for the bootloader"
         type: string
         required: true
-      bootloader-filename:
-        description: "Filename of the bootloader"
-        type: string
-        required: false
-        default: "bootloader.bin"
       public-release-repo:
         description: "Public release repository. (don't publish if empty)"
         type: string
@@ -223,7 +218,7 @@ jobs:
           repository: ${{ inputs.bootloader-repo }}
           tag: ${{ inputs.bootloader-release-tag }}
           fileName: '*.bin'
-          token: ${{ inputs.access-token }}
+          token: ${{ secrets.access-token }}
           out-file-path: ./artifacts
 
       - name: Download partition table and ota data
