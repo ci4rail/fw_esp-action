@@ -20,3 +20,4 @@ runs:
         files: ${{ inputs.assets }}
         generate_release_notes: true
         target_commitish: ${{ inputs.target_commitish }}
+        token: ${{ secrets.GITHUB_TOKEN }}

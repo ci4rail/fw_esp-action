@@ -128,4 +128,4 @@ jobs:
         with:
           assets: |
             artifacts/*
-          target-commitish: main
+          target_commitish: main
