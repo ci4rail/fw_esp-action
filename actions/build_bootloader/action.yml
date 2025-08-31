@@ -1,10 +1,5 @@
 name: "ESP Firmware Build Bootloader Action"
 description: "Build ESP bootloader using the devcontainer used in the project"
-inputs:
-  builder-image:
-    description: "Docker image name"
-    required: true
-
 
 runs:
   using: "composite"
@@ -16,39 +11,8 @@ runs:
         rm -rf build*
         project=$(grep -m1 -o 'project([^)]*)' CMakeLists.txt | sed 's/project(\(.*\))/\1/')
         echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
-        ${{ github.action_path }}/../run_in_devcontainer/setup.sh "${{ inputs.devcontainer-image}}" "$(id -u)" "$(id -g)"
-        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }}  "${{ inputs.app-build-command }}"  
-        ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${project}"
-
-
-  using: "composite"
-  steps:
-    - name: Get project and filename
-      shell: bash
-      id: identify
-      env:
-        EVENT_NAME: ${{ github.event_name }}
-      run: |
-        project=$(grep -m1 -o 'project([^)]*)' CMakeLists.txt | sed 's/project(\(.*\))/\1/')
-        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
-
-    - name: Build bootloader
-      shell: bash
-      id: build
-      run: |
-        build_cmd="source /opt/esp/idf/export.sh && cd /src/ && git config --global --add safe.directory /src && make bootloader"
-        echo "calling build container with command: ${build_cmd}"
-
-        docker run -v $(pwd):/src ${{ inputs.builder-image }} bash -c "${build_cmd}"
-
-        sudo chown -R runner .
-        version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' build/build.ninja)
-        project=${{ steps.identify.outputs.project }}
-        blfile=${project}-${version}.bin
-        cp build/bootloader/bootloader.bin build/bootloader/${blfile}
-
-        echo "version=${version}" >> $GITHUB_OUTPUT
-        echo "bootloader-file=build/bootloader/${blfile}" >> $GITHUB_OUTPUT
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }}  "make bootloader"  
+        ${{ github.action_path }}/post_build.sh "${project}"
 
 outputs:
   project-name:
@@ -58,5 +22,8 @@ outputs:
     description: "Bootloader version"
     value: ${{ steps.build.outputs.version }}
   bootloader-file:
-    description: "Bootloader path (with project name and version)"
+    description: "Bootloader file without path (with project name and version)"
     value: ${{ steps.build.outputs.bootloader-file }}
+  bootloader-file-path:
+    description: "Bootloader path (with project name and version)"
+    value: ${{ steps.build.outputs.bootloader-file-path }}

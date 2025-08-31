@@ -13,73 +13,34 @@ on:
       firmware_signing_azure_tenant_id:
         required: true
         type: string
-      firmware_signing_azure_dev_app_id:
-        required: true
-        type: string
-      firmware_signing_azure_dev_key_id_base:
-        description: "The base ID for the development key used for signing firmware. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g"
-        required: true
-        type: string
-      firmware_signing_azure_prod_app_id:
-        required: true
-        type: string
-      firmware_signing_azure_prod_key_id_base:
-        description: "The base ID for the production key used for signing firmware. e.g. https://vault-firmware-signing.vault.azure.net/keys/ci4rail-sio06-00-g"
-        required: true
-        type: string      
-      num_signing_keys:
-        required: true
-        type: number
 
 jobs:
   build:
     runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      project-name: ${{ steps.build_app.outputs.project-name }}
+      version: ${{ steps.build_app.outputs.version }}
+      bootloader-file: ${{ steps.build_app.outputs.bootloader-file }}
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-        with:
-          submodules: "recursive"
-          #token: ${{ inputs.access-token }}
 
-      - name: Get builder image
-        id: get_builder
-        uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
+      - name: Start esp-idf Devcontainer
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
 
-      - name: Build bootloader
+      - name: Build Bootloader
         id: build_bootloader
         uses: ci4rail/fw_esp-action/actions/build_bootloader@v10
+
+      - name: Upload build outputs to artifact storage
+        uses: actions/upload-artifact@v4
         with:
-          builder-image: ${{ steps.get_builder.outputs.builder-image }}
+          name: build_output
+          path: |
+            ${{ steps.build_bootloader.outputs.bootloader-file-path }}
 
-      - name: Duplicate build output
-        shell: bash
-        id: duplicate_build_output
-        run: |
-          cp ${{ steps.build_bootloader.outputs.bootloader-file }} build/bootloader-dev.bin
-          echo "dev-bootloader=build/bootloader-dev.bin" >> $GITHUB_OUTPUT
-          echo "prod-bootloader=build/bootloader.bin" >> $GITHUB_OUTPUT
-
-      - name: Sign bootloader for development
-        id: sign_bootloader_dev
-        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
-        with:
-          builder-image: ${{ steps.get_builder.outputs.builder-image }}
-          binary: ${{ steps.duplicate_build_output.outputs.dev-bootloader }}
-          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
-          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
-          azure_app_id: ${{ inputs.firmware_signing_azure_dev_app_id }}
-          key_id_base: ${{ inputs.firmware_signing_azure_dev_key_id_base }}
-          num_keys: ${{ inputs.num_signing_keys }}
-
-      - name: Sign bootloader for production
-        id: sign_bootloader_prod
-        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
-        with:
-          builder-image: ${{ steps.get_builder.outputs.builder-image }}
-          binary: ${{ steps.duplicate_build_output.outputs.prod-bootloader }}
-          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
-          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
-          azure_app_id: ${{ inputs.firmware_signing_azure_prod_app_id }}
-          key_id_base: ${{ inputs.firmware_signing_azure_prod_key_id_base }}
-          num_keys: ${{ inputs.num_signing_keys }}
-
+      - name: tear down devcontainer
+        if: ${{ always() }}
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10

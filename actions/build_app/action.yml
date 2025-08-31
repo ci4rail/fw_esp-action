@@ -1,9 +1,6 @@
 name: "ESP Firmware Build Action"
 description: "Build ESP firmware using the devcontainer used in the project"
 inputs:
-  devcontainer-image:
-    description: "Devcontainer image to use for build"
-    required: true
   app-build-command:
     description: "command to execute in container to build app (e.g. idf.py build or make build-secure)"
     required: true
