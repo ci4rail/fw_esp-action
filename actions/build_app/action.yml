@@ -22,8 +22,7 @@ runs:
         rm -rf build*
         project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
         echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
-        ${{ github.action_path }}/../run_in_devcontainer/setup.sh "${{ inputs.devcontainer-image}}" "$(id -u)" "$(id -g)"
-        ${{ github.action_path }}/../run_in_devcontainer/run.sh "${{ inputs.app-build-command }}"  
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ inputs.app-build-command }}"  
         ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${project}"
 
 outputs:

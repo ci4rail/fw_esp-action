@@ -1,7 +1,12 @@
 #!/usr/bin/env bash
-# $1 = command
 
-command=$1
-CONTAINER_NAME=esp-devc
+if [ "$#" -ne 2 ]; then
+    echo "Usage: $0 <run_id> <command>"
+    exit 1
+fi
 
-docker exec -u $(id -u):$(id -g) ${CONTAINER_NAME} bash -c "source /opt/esp/idf/export.sh && ${command}"
+run_id=$1
+command=$2
+container_name=esp-devc-${run_id}
+
+docker exec -u $(id -u):$(id -g) ${container_name} bash -c "source /opt/esp/idf/export.sh && ${command}"

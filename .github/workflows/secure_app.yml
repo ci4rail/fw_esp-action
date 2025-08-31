@@ -97,9 +97,8 @@ jobs:
           submodules: "recursive"
           token: ${{ secrets.access-token }}
 
-      - name: Get builder image
-        id: get_builder
-        uses: ci4rail/fw_esp-action/actions/get_builder_image@v10
+      - name: Start esp-idf Devcontainer
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
 
       - name: Build App
         id: build_app
@@ -116,6 +115,10 @@ jobs:
           path: |
             ${{ steps.build_app.outputs.app-file-path }}
 
+      - name: tear down devcontainer
+        if: ${{ always() }}
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
+
   sign:
     needs: build
     permissions:
@@ -129,6 +132,13 @@ jobs:
           - name: production
     environment: ${{ matrix.env.name }}
     steps:
+      # we need to checkout repo, as we need devcontainer.json
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start esp-idf Devcontainer
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
+
       - uses: actions/download-artifact@v4
         with:
           name: build_output
@@ -169,6 +179,12 @@ jobs:
           path: |
             ${{ steps.create_fwpkg.outputs.fwpkg }}
           retention-days: 2
+
+      - name: tear down devcontainer
+        if: ${{ always() }}
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
+
+
 
   # Execute steps in an github runner (not selfhosted)
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner

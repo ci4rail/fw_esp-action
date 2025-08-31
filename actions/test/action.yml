@@ -58,7 +58,7 @@ runs:
         access_key: ${{ inputs.minio-access-key }}
         secret_key: ${{ inputs.minio-secret-key }}
         bucket: ${{ inputs.minio-bucket }}
-        source_dir: ./artifacts
+        source_dir: ./artifacts/fwpkg-staging/
         target_dir: "/"
 
     - name: Test firmware package for development

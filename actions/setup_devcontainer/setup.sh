@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 
-# $1 = image
+if [ "$#" -ne 4 ]; then
+    echo "Usage: $0 <image> <uid> <gid> <container-name>"
+    exit 1
+fi
 
 image=$1
 uid=$2
 gid=$3
-CONTAINER_NAME=esp-devc
+container_name=$4
+
 
 set -x
 
-docker rm -f ${CONTAINER_NAME}
-
 docker run --name devc -d --entrypoint tail \
- --name ${CONTAINER_NAME} \
+ --name ${container_name} \
  -v $PWD:/workspace \
  -v /runner:/runner \
  -w /workspace \
@@ -21,7 +23,7 @@ docker run --name devc -d --entrypoint tail \
 
 echo "UID=${uid} GID=${gid}"
 
-docker exec ${CONTAINER_NAME} bash -c "\
+docker exec ${container_name} bash -c "\
     groupadd -g "$gid" hostgrp && \
     useradd -M -s /bin/bash -u "$uid" -g hostgrp hostusr && \
     mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr"
