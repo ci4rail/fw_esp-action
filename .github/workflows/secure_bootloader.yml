@@ -94,7 +94,7 @@ jobs:
           base=$(basename ${{ steps.sign.outputs.signed-binary-path }})
           newname=${base%.*}-${{ matrix.env.name }}.bin
           mv ${{ steps.sign.outputs.signed-binary-path }} in/${newname}
-          echo "newname=${newname}" >> $GITHUB_OUTPUT
+          echo "newname=in/${newname}" >> $GITHUB_OUTPUT
 
       - name: Upload signed bootloader to artifact storage
         uses: actions/upload-artifact@v4
