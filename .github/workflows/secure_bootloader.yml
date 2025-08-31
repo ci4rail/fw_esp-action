@@ -87,12 +87,21 @@ jobs:
         with:
           binary: in/${{ needs.build.outputs.bootloader-file }}
 
+      - name: rename bootloader binary according to environment
+        id: rename
+        run: |
+          # rename xxx.bin -> xxx-${matrix.env.name}.bin
+          base=$(basename ${{ steps.sign.outputs.signed-binary-path }})
+          newname=${base%.*}-${{ matrix.env.name }}.bin
+          mv ${{ steps.sign.outputs.signed-binary-path }} in/${newname}
+          echo "newname=${newname}" >> $GITHUB_OUTPUT
+
       - name: Upload signed bootloader to artifact storage
         uses: actions/upload-artifact@v4
         with:
           name: bootloader-${{ matrix.env.name }}
           path: |
-            ${{ steps.sign.outputs.signed-binary-path }}
+            ${{ steps.rename.outputs.newname }}
           retention-days: 2
 
       - name: tear down devcontainer
@@ -104,7 +113,7 @@ jobs:
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
-      - name: Download firmware packages
+      - name: Download bootloader binarys
         uses: actions/download-artifact@v4
         with:
           pattern: bootloader-*
@@ -119,3 +128,4 @@ jobs:
         with:
           assets: |
             artifacts/*
+          target-commitish: main
