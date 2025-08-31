@@ -158,7 +158,6 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/esp_sign@v10
         with:
           binary: in/${{ needs.build.outputs.app-file }}
-          key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_ID }}
 
       - name: Create firmware package
         id: create_fwpkg

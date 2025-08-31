@@ -86,7 +86,6 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/esp_sign@v10
         with:
           binary: in/${{ needs.build.outputs.bootloader-file }}
-          key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_IDS }}
 
       - name: Upload signed bootloader to artifact storage
         uses: actions/upload-artifact@v4

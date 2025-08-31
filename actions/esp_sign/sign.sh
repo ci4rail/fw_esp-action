@@ -2,16 +2,14 @@
 
 # Arguments:
 # $1: binary file to sign
-# $2: key ids, newline separated
 
 set -x
 set -e
 set -o pipefail
 
 binary_file=$1
-key_ids=$2
 
-if [ "$#" -ne 2 ]; then
+if [ "$#" -ne 1 ]; then
     echo "Usage: $0 <binary_file> <key_ids>"
     exit 1
 fi
@@ -23,7 +21,10 @@ cp $binary_file $binary_file.signed
 
 append_opt=""
 
-for (( i=0; i<${#KEYS[@]}; i++ )); do
+num_keys=$(ls ${binary_file}-signature-* 2>/dev/null | wc -l)
+echo "Found $num_keys signatures"
+
+for (( i=0; i<num_keys; i++ )); do
     pubfile=${binary_file}-pub-${i}.pem
     sig_file=${binary_file}-signature-$i
 
