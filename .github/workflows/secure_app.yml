@@ -193,7 +193,7 @@ jobs:
           chip: ${{ needs.build.outputs.chip }}
           build-dir: in/
           app-file: ${{ steps.sign.outputs.signed-binary-path }}
-          bootloader-file-pattern: bootloader*-${{ matrix.env.name }}.bin
+          bootloader-file-pattern: "*bootloader*-${{ matrix.env.name }}.bin"
           output-file: ${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
 
       - name: tear down devcontainer
