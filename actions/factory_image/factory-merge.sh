@@ -9,7 +9,7 @@ set -e
 chip=$1
 build_dir=$2
 final_app=$3
-final_bl=$4
+bl_pattern=$4
 output_file=$5
 
 cd $build_dir
@@ -20,6 +20,12 @@ options_project=$(grep -- --flash flash_project_args)
 # check if both options are identical
 if [ "$options_bl" != "$options_project" ]; then
     echo "Bootloader and project options are different"
+    exit 1
+fi
+
+final_bl=$(find . -maxdepth 1 -type f -name "$bl_pattern" | head -n1)
+if [ -z "$final_bl" ]; then
+    echo "Bootloader file with pattern $bl_pattern not found"
     exit 1
 fi
 

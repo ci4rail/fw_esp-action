@@ -11,12 +11,10 @@ inputs:
   build-dir: 
     description: build directory containing the binaries (e.g. build)
     required: true
-  bootloader-file: 
+  bootloader-file-pattern: 
     description: |
-      bootloader file to include in the factory image.
-      For products using secure boot, pass the signed bootloader here.
-    required: false
-    default: bootloader/bootloader.bin
+      bootloader file pattern to search for in the build directory.
+    required: true
   app-file: 
     description: |
       app file to include in the factory image (e.g. build/my_project.bin).
@@ -32,4 +30,4 @@ runs:
     - name: Generate merged factory binary
       shell: bash
       run: |
-        ./factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file }} ${{ inputs.output-file }}
+        ./factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}
