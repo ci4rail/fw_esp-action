@@ -182,10 +182,10 @@ jobs:
           tag: ${{ inputs.bootloader-release-tag }}
           token: ${{ secrets.access-token }}
           fileName: "*"
-          out-file-path: bl/
+          out-file-path: in/
 
       - name: List files
-        run: ls -l bl/
+        run: ls -l in/
 
       - name: Build Merged Factory binary
         uses: ci4rail/fw_esp-action/actions/factory_image@v10
