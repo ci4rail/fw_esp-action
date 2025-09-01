@@ -84,6 +84,7 @@ jobs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
+      chip: ${{ steps.build_app.outputs.chip }}
 
     steps:
       - name: Checkout repository
@@ -110,7 +111,6 @@ jobs:
             ${{ steps.build_app.outputs.app-file-path }}
             ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
             ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
-            ${{ steps.build_app.outputs.build-dir}}/flash_bootloader_args
             ${{ steps.build_app.outputs.build-dir}}/flash_project_args
 
       - name: tear down devcontainer
@@ -175,6 +175,14 @@ jobs:
             ${{ steps.create_fwpkg.outputs.fwpkg }}
           retention-days: 2
 
+      - name: Download bootloader
+        uses: robinraju/release-downloader@v1
+        with:
+          repository: ${{ inputs.bootloader-repo }}
+          tag: ${{ inputs.bootloader-release-tag }}
+          token: ${{ secrets.access-token }}
+          out-file-path: in/
+
       - name: tear down devcontainer
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
@@ -214,15 +222,6 @@ jobs:
     if: ${{ always() && (github.ref_type == 'tag') && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') && (needs.build.result == 'success') && (needs.sign.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Download bootloader
-        uses: robinraju/release-downloader@v1
-        with:
-          repository: ${{ inputs.bootloader-repo }}
-          tag: ${{ inputs.bootloader-release-tag }}
-          fileName: '*.bin'
-          token: ${{ secrets.access-token }}
-          out-file-path: ./artifacts
-
       - name: Download partition table and ota data
         uses: actions/download-artifact@v4
         with:

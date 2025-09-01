@@ -9,6 +9,8 @@ if [ -z "$2" ]; then
   exit 1
 fi
 
+set -e
+
 build_dfu=$1
 project_name=$2
 
@@ -31,8 +33,11 @@ if [ "${build_dfu}" = "true" ]; then
     cp ${build_dir}/dfu.bin ${dfu_file}
 fi
 
+chip=$(jq -r '.IDF_TARGET' ${build_dir}/config.env)
+
 echo "build-dir=${build_dir}" >> $GITHUB_OUTPUT
 echo "app-file=${app_file}" >> $GITHUB_OUTPUT
 echo "app-file-path=${app_file_path}" >> $GITHUB_OUTPUT
 echo "version=${version}" >> $GITHUB_OUTPUT
 echo "dfu-file=${dfu_file}" >> $GITHUB_OUTPUT
+echo "chip=${chip}" >> $GITHUB_OUTPUT

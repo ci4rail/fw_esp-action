@@ -41,3 +41,6 @@ outputs:
   dfu-file:
     description: "DFU file path"
     value: ${{ steps.build.outputs.dfu-file }}
+  chip:
+    description: "Chip type"
+    value: ${{ steps.build.outputs.chip }}
