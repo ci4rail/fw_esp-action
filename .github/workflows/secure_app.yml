@@ -181,6 +181,7 @@ jobs:
           repository: ${{ inputs.bootloader-repo }}
           tag: ${{ inputs.bootloader-release-tag }}
           token: ${{ secrets.access-token }}
+          fileName: "*"
           out-file-path: in/
 
       - name: Build Merged Factory binary
