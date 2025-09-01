@@ -6,6 +6,7 @@ if [ "$#" -ne 5 ]; then
 fi
 
 set -e 
+
 chip=$1
 build_dir=$2
 final_app=$3
@@ -13,6 +14,7 @@ bl_pattern=$4
 output_file=$5
 
 cd $build_dir
+ls -lR
 
 options_bl=$(grep -- --flash flash_bootloader_args)
 options_project=$(grep -- --flash flash_project_args)
