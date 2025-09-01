@@ -68,7 +68,8 @@ jobs:
           name: build_output
           path: in/
 
-      - run: | 
+      - name: List files in input directory
+        run: |
           ls -lR in/
 
       - name: Generate signature
