@@ -36,6 +36,7 @@ jobs:
           name: build_output
           path: |
             ${{ steps.build_bootloader.outputs.bootloader-file-path }}
+            ${{ steps.build_bootloader.outputs.build-dir }}/flash_bootloader_args
 
       - name: tear down devcontainer
         if: ${{ always() }}
@@ -109,6 +110,12 @@ jobs:
     if: github.ref_type == 'tag'
     runs-on: ubuntu-latest
     steps:
+      - name: Download flash args
+        uses: actions/download-artifact@v4
+        with:
+          name: build_output
+          path: ./add-ons
+
       - name: Download bootloader binarys
         uses: actions/download-artifact@v4
         with:
@@ -124,4 +131,5 @@ jobs:
         with:
           assets: |
             artifacts/*
+            add-ons/flash_bootloader_args
           target_commitish: main

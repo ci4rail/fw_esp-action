@@ -27,3 +27,6 @@ outputs:
   bootloader-file-path:
     description: "Bootloader path (with project name and version)"
     value: ${{ steps.build.outputs.bootloader-file-path }}
+  build-dir:
+    description: "Build directory"
+    value: ${{ steps.build.outputs.build-dir }}
