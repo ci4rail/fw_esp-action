@@ -4,10 +4,12 @@ description: |
   Expects the binaries in the build dir.
   Expects the flash_bootloader_args and flash_project_args files to be present in the build dir.
 
-  The resulting file will be named according to the app-file.
   E.g. when app-file is called "fw-abc-default-1.0.10-staging.bin", the resulting factory image will be named 
                                "fw-abc-default-1.0.10-staging-factory.bin".
 inputs:
+  output-file:
+    description: "Output file name (e.g. my_project-1.0.0-staging-factory.bin)"
+    required: true
   build-dir: 
     description: build directory containing the binaries (e.g. build)
     required: true
@@ -30,4 +32,4 @@ runs:
     - name: Generate merged factory binary
       shell: bash
       run: |
-        ./factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}
+        ${{ github.action_path }}/factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}
