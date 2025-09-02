@@ -36,6 +36,3 @@ for (( i=0; i<num_keys; i++ )); do
     append_opt="--append_signatures"
 done
 
-
-echo "signed-binary-path=${binary_file}" >> $GITHUB_OUTPUT
-echo "signed-binary-file=$(basename ${binary_file})" >> $GITHUB_OUTPUT

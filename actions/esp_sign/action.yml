@@ -22,10 +22,17 @@ runs:
       run: |
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/sign.sh ${{ inputs.binary }} ${{ inputs.key_ids }}"
 
+    - name: Determine signed binary file name without path
+      id: sign_file
+      shell: bash
+      run: |
+        signed_binary_file=$(basename "${{ inputs.binary }}")
+        echo "signed-binary-file=${signed_binary_file}" >> $GITHUB_OUTPUT
+
 outputs:
   signed-binary-path:
     description: "Path to the signed binary"
-    value: ${{ steps.sign.signed-binary-path }}
+    value: ${{ inputs.binary }}
   signed-binary-file:
     description: "File name of the signed binary"
-    value: ${{ steps.sign.signed-binary-file }}
+    value: ${{ steps.sign_file.outputs.signed-binary-file }}
