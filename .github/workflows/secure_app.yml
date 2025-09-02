@@ -167,13 +167,6 @@ jobs:
           project-name: ${{ needs.build.outputs.project-name }}
           version: ${{ needs.build.outputs.version }}
 
-      - name: Upload firmware packages to artifact storage
-        uses: actions/upload-artifact@v4
-        with:
-          name: fwpkg-${{ matrix.env.name }}
-          path: |
-            ${{ steps.create_fwpkg.outputs.fwpkg }}
-          retention-days: 2
 
       - name: Download bootloader
         uses: robinraju/release-downloader@v1
@@ -193,10 +186,18 @@ jobs:
           bootloader-file-pattern: "*bootloader*-${{ matrix.env.name }}.bin"
           output-file: ${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
 
+      - name: Upload firmware packages to artifact storage
+        uses: actions/upload-artifact@v4
+        with:
+          name: fwpkg-${{ matrix.env.name }}
+          path: |
+            ${{ steps.create_fwpkg.outputs.fwpkg }}
+            in/${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
+          retention-days: 2
+
       - name: tear down devcontainer
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
-
 
 
   # Execute steps in an github runner (not selfhosted)
@@ -232,12 +233,6 @@ jobs:
     if: ${{ always() && (github.ref_type == 'tag') && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') && (needs.build.result == 'success') && (needs.sign.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
-      - name: Download partition table and ota data
-        uses: actions/download-artifact@v4
-        with:
-          name: build_output
-          path: ./artifacts
-
       - name: Download firmware packages
         uses: actions/download-artifact@v5
         with:

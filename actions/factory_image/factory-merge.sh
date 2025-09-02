@@ -14,7 +14,6 @@ bl_pattern=$4
 output_file=$5
 
 cd $build_dir
-ls -lR
 
 options_bl=$(grep -- --flash flash_bootloader_args)
 options_project=$(grep -- --flash flash_project_args)
