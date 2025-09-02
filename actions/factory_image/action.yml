@@ -32,4 +32,4 @@ runs:
     - name: Generate merged factory binary
       shell: bash
       run: |
-        ${{ github.action_path }}/factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}"

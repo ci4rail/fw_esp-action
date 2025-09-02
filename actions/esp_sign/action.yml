@@ -25,4 +25,7 @@ runs:
 outputs:
   signed-binary-path:
     description: "Path to the signed binary"
-    value: ${{ inputs.binary }}
+    value: ${{ step.sign.signed-binary-path }}
+  signed-binary-file:
+    description: "File name of the signed binary"
+    value: ${{ step.sign.signed-binary-file }}

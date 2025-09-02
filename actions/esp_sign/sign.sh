@@ -37,3 +37,5 @@ for (( i=0; i<num_keys; i++ )); do
 done
 
 
+echo "signed-binary-path=${binary_file}" >> $GITHUB_OUTPUT
+echo "signed-binary-file=$(basename ${binary_file})" >> $GITHUB_OUTPUT

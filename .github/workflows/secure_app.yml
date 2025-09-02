@@ -184,15 +184,12 @@ jobs:
           fileName: "*"
           out-file-path: in/
 
-      - name: List files
-        run: ls -l in/
-
       - name: Build Merged Factory binary
         uses: ci4rail/fw_esp-action/actions/factory_image@v10
         with:
           chip: ${{ needs.build.outputs.chip }}
           build-dir: in/
-          app-file: ${{ steps.sign.outputs.signed-binary-path }}
+          app-file: ${{ steps.sign.outputs.signed-binary-file }}
           bootloader-file-pattern: "*bootloader*-${{ matrix.env.name }}.bin"
           output-file: ${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
 
