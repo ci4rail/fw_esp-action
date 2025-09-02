@@ -249,3 +249,4 @@ jobs:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
             artifacts/*
+            artifacts/in/*
