@@ -61,6 +61,14 @@ on:
         type: string
         required: false
         default: ""
+      license-contact:
+        description: "License contact email"
+        type: string
+        required: true
+      company:
+        description: "Company name"
+        type: string
+        required: true
 
     secrets:
       access-token:
@@ -85,6 +93,9 @@ jobs:
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
       chip: ${{ steps.build_app.outputs.chip }}
+      sbom: ${{ steps.licensing.outputs.sbom }}
+      licenses: ${{ steps.licensing.outputs.licenses }}
+      notices: ${{ steps.licensing.outputs.notices }}
 
     steps:
       - name: Checkout repository
@@ -103,6 +114,16 @@ jobs:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
+      - name: Generate Licensing Info
+        uses: ci4rail/fw_esp-action/actions/licensing@v10
+        id: licensing
+        with:
+          build-dir: ${{ steps.build_app.outputs.build-dir }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
+          license-contact: ${{ inputs.license-contact }}
+          company: ${{ inputs.company }}
+
       - name: Upload build outputs to artifact storage
         uses: actions/upload-artifact@v4
         with:
@@ -112,6 +133,9 @@ jobs:
             ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
             ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
             ${{ steps.build_app.outputs.build-dir}}/flash_project_args
+            ${{ steps.licensing.outputs.sbom }}
+            ${{ steps.licensing.outputs.licenses }}
+            ${{ steps.licensing.outputs.notices }}
 
       - name: tear down devcontainer
         if: ${{ always() }}

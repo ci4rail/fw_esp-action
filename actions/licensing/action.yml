@@ -1,0 +1,63 @@
+name: "Generate Licensing Info for Release"
+description: |
+  generate SBOM, LICENSES and OPEN_SOURCE_NOTICES.txt
+inputs:
+  build-dir:
+    description: "Build directory"
+    required: true
+  project-name:
+    description: "Project name"
+    required: true
+  version:
+    description: "Project version"
+    required: true
+  license-contact:
+    description: "License contact email"
+    required: true
+  company:
+    description: "Company name"
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate SBOM
+      id: sbom
+      shell: bash
+      run: |
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} \
+          "esp-idf-sbom create --rem-unused --rem-submodules --rem-config --file-tags -o sbom.spdx ${{ inputs.build-dir }}/project_description.json"
+        echo "sbom-file=sbom.spdx" >> $GITHUB_OUTPUT
+
+    - name: Generate LICENSE files
+      shell: bash
+      run: |
+        ${{ github.action_path }}/download_licenses.sh
+        tar -czf licenses.tar.gz LICENSES
+        echo "licenses-file=licenses.tar.gz" >> $GITHUB_OUTPUT
+
+    - name: Create OPEN_SOURCE_NOTICES.txt
+      shell: bash
+      run: |
+        export PRODUCT_NAME=${{ inputs.project-name }}
+        export VERSION=${{ inputs.version }}
+        export BUILD_DATE="$(date -u +%F)"
+        export RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${GITHUB_REF_NAME#refs/tags/}"
+        export CONTACT_EMAIL=${{ inputs.license-contact }}
+        export YEAR="$(date -u +%Y)"
+        export COMPANY=${{ inputs.company }}
+
+        envsubst < ${{ github.action_path }}/OPEN_SOURCE_NOTICES.tmpl.txt > OPEN_SOURCE_NOTICES.txt
+        echo "notices-file=OPEN_SOURCE_NOTICES.txt" >> $GITHUB_OUTPUT
+
+outputs:
+  sbom:
+    description: "Software Bill of Materials"
+    value: ${{ steps.sbom.outputs.sbom-file }}
+  licenses:
+    description: "LICENSE files archive"
+    value: ${{ steps.licenses.outputs.licenses-file }}
+  notices:
+    description: "Open Source Notices"
+    value: ${{ steps.notices.outputs.notices-file }}
