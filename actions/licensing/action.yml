@@ -33,7 +33,7 @@ runs:
     - name: Generate LICENSE files
       shell: bash
       run: |
-        ${{ github.action_path }}/download_licenses.sh
+        ${{ github.action_path }}/download-licenses.sh
         tar -czf licenses.tar.gz LICENSES
         echo "licenses-file=licenses.tar.gz" >> $GITHUB_OUTPUT
 
