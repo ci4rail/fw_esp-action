@@ -17,6 +17,12 @@ inputs:
 runs:
   using: "composite"
   steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+      with:
+        submodules: "recursive"
+        token: ${{ secrets.access-token }}
+
     - name: Get release notes from source repo
       shell: bash
       id: notes
