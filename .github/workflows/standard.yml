@@ -133,11 +133,11 @@ jobs:
       - name: Build Merged Factory binary
         uses: ci4rail/fw_esp-action/actions/factory_image@v10
         with:
-          chip: ${{ steps.build.outputs.chip }}
+          chip: ${{ steps.build_app.outputs.chip }}
           build-dir: ${{ steps.build_app.outputs.build-dir }}
           app-file: ${{ steps.build_app.outputs.app-file }}
           bootloader-file-pattern: "*bootloader.bin"
-          output-file: ${{ steps.build.outputs.project-name }}-${{ steps.build.outputs.version }}-factory.bin
+          output-file: ${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
 
       - name: Upload build outputs to artifact storage
         uses: actions/upload-artifact@v4
