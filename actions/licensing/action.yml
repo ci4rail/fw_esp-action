@@ -43,6 +43,7 @@ runs:
         ${{ github.action_path }}/download-licenses.sh
         license_file=licenses.tar.gz
         license_path=${{ inputs.build-dir }}/${license_file}
+        ls -l LICENSES
         tar -czf ${license_file} LICENSES
         tar tf ${license_file}
         echo "licenses-path=${license_path}" >> $GITHUB_OUTPUT
