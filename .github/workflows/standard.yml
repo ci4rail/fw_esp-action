@@ -55,6 +55,11 @@ on:
         description: "Company name"
         type: string
         required: true
+      generate-licesing-info:
+        description: "Whether to generate licensing info (SBOM, LICENSES, OPEN_SOURCE_NOTICES.txt)"
+        required: false
+        type: boolean
+        default: true
 
     secrets:
       access-token:
@@ -101,6 +106,7 @@ jobs:
           build-dfu: ${{ inputs.build-dfu }}
 
       - name: Generate Licensing Info
+        if: ${{ inputs.generate-licesing-info }}
         uses: ci4rail/fw_esp-action/actions/licensing@v10
         id: licensing
         with:
