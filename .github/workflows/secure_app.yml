@@ -166,6 +166,10 @@ jobs:
           name: build_output
           path: in/
 
+      - name: List Files
+        run: |
+          ls -l in/
+
       - name: Generate signature
         id: gen_signature
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
