@@ -122,8 +122,8 @@ jobs:
         with:
           output-file-suffix: ""
           app-binary: ${{ steps.build_app.outputs.app-file-path }}
-          project-name: ${{ steps.build.outputs.project-name }}
-          version: ${{ steps.build.outputs.version }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
 
       - name: Move fwpkg to build dir
         shell: bash
