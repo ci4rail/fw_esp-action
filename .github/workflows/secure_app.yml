@@ -286,6 +286,6 @@ jobs:
           assets: |
             fwpkg/*
             fwpkg/in/*
-            build-artifacts/${{ needs.build.outputs.sbom-file }}
-            build-artifacts/${{ needs.build.outputs.licenses-file }}
-            build-artifacts/${{ needs.build.outputs.notices-file }}
+            build-artifacts/${{ needs.build.outputs.sbom }}
+            build-artifacts/${{ needs.build.outputs.licenses }}
+            build-artifacts/${{ needs.build.outputs.notices }}
