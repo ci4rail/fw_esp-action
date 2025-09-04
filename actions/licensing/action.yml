@@ -26,22 +26,27 @@ runs:
       id: sbom
       shell: bash
       run: |
+        sbom_file=${{ inputs.build-dir }}/sbom.spdx
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} \
-          "esp-idf-sbom create --rem-unused --rem-submodules --rem-config --file-tags -o sbom.spdx ${{ inputs.build-dir }}/project_description.json"
-        echo "sbom-file=sbom.spdx" >> $GITHUB_OUTPUT
+          "esp-idf-sbom create --rem-unused --rem-submodules --rem-config --file-tags -o ${sbom_file} ${{ inputs.build-dir }}/project_description.json"
+        echo "sbom-file=${sbom_file}" >> $GITHUB_OUTPUT
 
     - name: Generate LICENSE files
       shell: bash
+      id: licenses
       run: |
+        cd ${{ inputs.build-dir }}
         sudo apt-get update
         sudo apt-get install -y python3-pip file
         ${{ github.action_path }}/download-licenses.sh
         tar -czf licenses.tar.gz LICENSES
-        echo "licenses-file=licenses.tar.gz" >> $GITHUB_OUTPUT
+        echo "licenses-file=${{ inputs.build-dir }}/licenses.tar.gz" >> $GITHUB_OUTPUT
 
     - name: Create OPEN_SOURCE_NOTICES.txt
       shell: bash
+      id: notices
       run: |
+        cd ${{ inputs.build-dir }}
         sudo apt-get install -y gettext-base
         export PRODUCT_NAME=${{ inputs.project-name }}
         export VERSION=${{ inputs.version }}
@@ -52,7 +57,7 @@ runs:
         export COMPANY=${{ inputs.company }}
 
         envsubst < ${{ github.action_path }}/OPEN_SOURCE_NOTICES.tmpl.txt > OPEN_SOURCE_NOTICES.txt
-        echo "notices-file=OPEN_SOURCE_NOTICES.txt" >> $GITHUB_OUTPUT
+        echo "notices-file=${{ inputs.build-dir }}/OPEN_SOURCE_NOTICES.txt" >> $GITHUB_OUTPUT
 
 outputs:
   sbom:
