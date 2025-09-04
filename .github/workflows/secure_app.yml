@@ -289,3 +289,15 @@ jobs:
             build-artifacts/${{ needs.build.outputs.sbom }}
             build-artifacts/${{ needs.build.outputs.licenses }}
             build-artifacts/${{ needs.build.outputs.notices }}
+
+
+      - name: Create Release in Public Repo
+        uses: ci4rail/fw_esp-action/actions/release_public@v10
+        with:
+          public-repo: ${{ inputs.public-release-repo }}
+          assets: |
+            fwpkg/*production*.fwpkg
+            build-artifacts/${{ needs.build.outputs.sbom }}
+            build-artifacts/${{ needs.build.outputs.licenses }}
+            build-artifacts/${{ needs.build.outputs.notices }}
+          access-token: ${{ secrets.access-token }}
