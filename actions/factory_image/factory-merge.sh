@@ -34,7 +34,12 @@ fi
 # ignore lines starting with "--"
 # other lines are "offset filename"
 # extract the offset and filename
-org_content=$(cat flash_bootloader_args flash_project_args)
+if grep -q bootloader flash_project_args; then
+    # non-secure project, bootloader is in flash_project_args
+    org_content=$(cat flash_project_args)
+else
+    org_content=$(cat flash_bootloader_args flash_project_args)
+fi
 
 merge_args=""
 while read -r line; do
