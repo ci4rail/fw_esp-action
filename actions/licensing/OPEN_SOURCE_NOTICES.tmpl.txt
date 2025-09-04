@@ -9,10 +9,9 @@ of all third-party and in-house components, their versions, and license informat
 provided in the Software Bill of Materials (SBOM):
 
 • SBOM: sbom.spdx   (included in this release artifact)
-• License texts: LICENSES.tar.gz
-• Online release page: ${RELEASE_URL}
+• License texts: licenses.tar.gz
 
-The LICENSES/ folder contains the canonical texts for the SPDX license identifiers
+The licenses.tar.gz tar ball contains the canonical texts for the SPDX license identifiers
 referenced in the SBOM (e.g., Apache-2.0, MIT, BSD-3-Clause). If any license imposes
 obligations beyond attribution (e.g., providing source code or a written offer), the SBOM
 and the online release page provide the relevant links or instructions.

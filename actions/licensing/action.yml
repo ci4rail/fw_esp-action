@@ -44,6 +44,7 @@ runs:
         license_file=licenses.tar.gz
         license_path=${{ inputs.build-dir }}/${license_file}
         tar -czf ${license_file} LICENSES
+        tar tf ${license_file}
         echo "licenses-path=${license_path}" >> $GITHUB_OUTPUT
         echo "licenses-file=${license_file}" >> $GITHUB_OUTPUT
 
