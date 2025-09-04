@@ -129,7 +129,7 @@ jobs:
         with:
           chip: ${{ steps.build.outputs.chip }}
           build-dir: ${{ steps.build_app.outputs.build-dir }}
-          app-file: ${{ steps.sign.outputs.signed-binary-file }}
+          app-file: ${{ steps.build_app.outputs.app-file }}
           bootloader-file-pattern: "*bootloader.bin"
           output-file: ${{ steps.build.outputs.project-name }}-${{ steps.build.outputs.version }}-factory.bin
 
@@ -153,7 +153,7 @@ jobs:
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
     if: inputs.test-name != ''
-    needs: [build, sign]
+    needs: [build]
     runs-on: ubuntu-latest
     steps:
       - name: Excecute Test on Test station
