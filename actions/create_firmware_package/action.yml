@@ -5,7 +5,7 @@ description: |
 
 inputs:
   output-file-suffix:
-    description: "Suffix to append to the output firmware package file (e.g. -dev)"
+    description: "Suffix to append to the output firmware package file (e.g. -staging)"
     required: true
   app-binary:
     description: "Path to the application binary"

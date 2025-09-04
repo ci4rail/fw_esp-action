@@ -1,14 +1,8 @@
-name: ESP32 Secure App Workflow
+name: ESP32 Standard Firmware Workflow
 
 on:
   workflow_call:
     inputs:
-      firmware_signing_azure_subscription_id:
-        required: true
-        type: string
-      firmware_signing_azure_tenant_id:
-        required: true
-        type: string
       build-dfu:
         description: "Whether to build dfu binary"
         required: false
@@ -48,14 +42,6 @@ on:
         type: string
         required: false
         default: "esp-fw-testing"
-      bootloader-repo:
-        description: "Repository where to get bootloader from"
-        type: string
-        required: true
-      bootloader-release-tag:
-        description: "Release tag for the bootloader"
-        type: string
-        required: true
       public-release-repo:
         description: "Public release repository. (don't publish if empty)"
         type: string
@@ -92,10 +78,10 @@ jobs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
-      chip: ${{ steps.build_app.outputs.chip }}
       sbom: ${{ steps.licensing.outputs.sbom-file }}
       licenses: ${{ steps.licensing.outputs.licenses-file }}
       notices: ${{ steps.licensing.outputs.notices-file }}
+      fwpkg: ${{ steps.create_fwpkg.outputs.fwpkg }}
 
     steps:
       - name: Checkout repository
@@ -111,7 +97,7 @@ jobs:
         id: build_app
         uses: ci4rail/fw_esp-action/actions/build_app@v10        
         with:
-          app-build-command: make build-secure
+          app-build-command: idf.py build
           build-dfu: ${{ inputs.build-dfu }}
 
       - name: Generate Licensing Info
@@ -124,15 +110,36 @@ jobs:
           license-contact: ${{ inputs.license-contact }}
           company: ${{ inputs.company }}
 
+      - name: Create firmware package
+        id: create_fwpkg
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        with:
+          output-file-suffix: ""
+          app-binary: ${{ steps.build_app.outputs.app-file-path }}
+          project-name: ${{ steps.build.outputs.project-name }}
+          version: ${{ steps.build.outputs.version }}
+
+      - name: Move fwpkg to build dir
+        shell: bash
+        run: |
+          mv ${{ steps.create_fwpkg.outputs.fwpkg }} ${{ steps.build_app.outputs.build-dir }}/
+
+      - name: Build Merged Factory binary
+        uses: ci4rail/fw_esp-action/actions/factory_image@v10
+        with:
+          chip: ${{ steps.build.outputs.chip }}
+          build-dir: ${{ steps.build_app.outputs.build-dir }}
+          app-file: ${{ steps.sign.outputs.signed-binary-file }}
+          bootloader-file-pattern: "*bootloader.bin"
+          output-file: ${{ steps.build.outputs.project-name }}-${{ steps.build.outputs.version }}-factory.bin
+
       - name: Upload build outputs to artifact storage
         uses: actions/upload-artifact@v4
         with:
           name: build_output
           path: |
             ${{ steps.build_app.outputs.app-file-path }}
-            ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
-            ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
-            ${{ steps.build_app.outputs.build-dir}}/flash_project_args
+            ${{ steps.build_app.outputs.build-dir }}/${{ steps.create_fwpkg.outputs.fwpkg }}
             ${{ steps.licensing.outputs.sbom-path }}
             ${{ steps.licensing.outputs.licenses-path }}
             ${{ steps.licensing.outputs.notices-path }}
@@ -141,103 +148,13 @@ jobs:
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
 
-  sign:
-    needs: build
-    permissions:
-      id-token: write # required for OIDC
-      contents: read
-    runs-on: [self-hosted, linux, x64]
-    strategy:
-      matrix:
-        env:
-          - name: staging
-          - name: production
-    environment: ${{ matrix.env.name }}
-    steps:
-      # we need to checkout repo, as we need devcontainer.json
-      - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Start esp-idf Devcontainer
-        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
-
-      - uses: actions/download-artifact@v4
-        with:
-          name: build_output
-          path: in/
-
-      - name: List Files
-        run: |
-          ls -l in/
-
-      - name: Generate signature
-        id: gen_signature
-        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
-        with:
-          binary: in/${{ needs.build.outputs.app-file }}
-          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
-          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
-          azure_app_id: ${{ vars.FIRMWARE_SIGNING_AZURE_APP_ID }}
-          key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_ID }}
-
-      - name: Sign image with espsecure 
-        id: sign
-        uses: ci4rail/fw_esp-action/actions/esp_sign@v10
-        with:
-          binary: in/${{ needs.build.outputs.app-file }}
-
-      - name: Create firmware package
-        id: create_fwpkg
-        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
-        with:
-          output-file-suffix: "-${{ matrix.env.name }}"
-          app-binary: ${{ steps.sign.outputs.signed-binary-path }}
-          project-name: ${{ needs.build.outputs.project-name }}
-          version: ${{ needs.build.outputs.version }}
-
-
-      - name: Download bootloader
-        uses: robinraju/release-downloader@v1
-        with:
-          repository: ${{ inputs.bootloader-repo }}
-          tag: ${{ inputs.bootloader-release-tag }}
-          token: ${{ secrets.access-token }}
-          fileName: "*"
-          out-file-path: in/
-
-      - name: Build Merged Factory binary
-        uses: ci4rail/fw_esp-action/actions/factory_image@v10
-        with:
-          chip: ${{ needs.build.outputs.chip }}
-          build-dir: in/
-          app-file: ${{ steps.sign.outputs.signed-binary-file }}
-          bootloader-file-pattern: "*bootloader*-${{ matrix.env.name }}.bin"
-          output-file: ${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
-
-      - name: Upload firmware packages to artifact storage
-        uses: actions/upload-artifact@v4
-        with:
-          name: fwpkg-${{ matrix.env.name }}
-          path: |
-            ${{ steps.create_fwpkg.outputs.fwpkg }}
-            in/${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
-          retention-days: 2
-
-      - name: tear down devcontainer
-        if: ${{ always() }}
-        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
-
 
   # Execute steps in an github runner (not selfhosted)
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
-  test-staging:
+  test:
     if: inputs.test-name != ''
     needs: [build, sign]
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: [staging]   # only staging
-    environment: ${{ matrix.env }}    
     steps:
       - name: Excecute Test on Test station
         uses: ci4rail/fw_esp-action/actions/test@v10
@@ -257,8 +174,8 @@ jobs:
           version: ${{ needs.build.outputs.version }}
 
   release:
-    needs: [build, sign, test-staging]
-    if: ${{ always() && (github.ref_type == 'tag') && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') && (needs.build.result == 'success') && (needs.sign.result == 'success') }}
+    needs: [build, test]
+    if: ${{ always() && (github.ref_type == 'tag') && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.build.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
       # we need to checkout the repo to generate the release notes for the public repo
@@ -268,13 +185,6 @@ jobs:
           submodules: "recursive"
           token: ${{ secrets.access-token }}
 
-      - name: Download firmware packages
-        uses: actions/download-artifact@v5
-        with:
-          pattern: fwpkg-*
-          path: ./fwpkg
-          merge-multiple: true
-
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:
@@ -283,20 +193,18 @@ jobs:
 
       - shell: bash
         run: |
-          ls -l fwpkg
-          ls -l build-artifacts
+          ls -lR build-artifacts
 
       - name: Create Release in this Repo
         uses: ci4rail/fw_esp-action/actions/release@v10
         with:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
-            fwpkg/*
-            fwpkg/in/*
+            build-artifacts/${{ needs.build.outputs.app-file }}
+            build-artifacts/${{ needs.create_fwpkg.outputs.fwpkg }}
             build-artifacts/${{ needs.build.outputs.sbom }}
             build-artifacts/${{ needs.build.outputs.licenses }}
             build-artifacts/${{ needs.build.outputs.notices }}
-
 
       - name: Create Release in Public Repo
         if: ${{ inputs.public-release-repo != '' }}
@@ -304,7 +212,8 @@ jobs:
         with:
           public-repo: ${{ inputs.public-release-repo }}
           assets: |
-            fwpkg/*production*.fwpkg
+            build-artifacts/${{ needs.build.outputs.app-file }}
+            build-artifacts/${{ needs.create_fwpkg.outputs.fwpkg }}
             build-artifacts/${{ needs.build.outputs.sbom }}
             build-artifacts/${{ needs.build.outputs.licenses }}
             build-artifacts/${{ needs.build.outputs.notices }}
