@@ -271,7 +271,7 @@ jobs:
       - name: Download Build Artifacts
         uses: actions/download-artifact@v5
         with:
-          pattern: build-artifacts-*
+          name: build_output
           path: ./build-artifacts
 
       - shell: bash
