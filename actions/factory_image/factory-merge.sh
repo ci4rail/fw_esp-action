@@ -24,7 +24,7 @@ if [ "$options_bl" != "$options_project" ]; then
     exit 1
 fi
 
-final_bl=$(find . -maxdepth 1 -type f -name "$bl_pattern" | head -n1)
+final_bl=$(find . -maxdepth 2 -type f -name "$bl_pattern" | head -n1)
 if [ -z "$final_bl" ]; then
     echo "Bootloader file with pattern $bl_pattern not found"
     exit 1
