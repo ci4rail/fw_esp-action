@@ -261,6 +261,13 @@ jobs:
     if: ${{ always() && (github.ref_type == 'tag') && (needs.test-staging.result == 'success' || needs.test-staging.result == 'skipped') && (needs.build.result == 'success') && (needs.sign.result == 'success') }}
     runs-on: ubuntu-latest
     steps:
+      # we need to checkout the repo to generate the release notes for the public repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ secrets.access-token }}
+
       - name: Download firmware packages
         uses: actions/download-artifact@v5
         with:
