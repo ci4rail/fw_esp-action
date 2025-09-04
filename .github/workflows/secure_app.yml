@@ -93,9 +93,9 @@ jobs:
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
       chip: ${{ steps.build_app.outputs.chip }}
-      sbom: ${{ steps.licensing.outputs.sbom }}
-      licenses: ${{ steps.licensing.outputs.licenses }}
-      notices: ${{ steps.licensing.outputs.notices }}
+      sbom: ${{ steps.licensing.outputs.sbom-file }}
+      licenses: ${{ steps.licensing.outputs.licenses-file }}
+      notices: ${{ steps.licensing.outputs.notices-file }}
 
     steps:
       - name: Checkout repository
@@ -133,9 +133,9 @@ jobs:
             ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
             ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
             ${{ steps.build_app.outputs.build-dir}}/flash_project_args
-            ${{ steps.licensing.outputs.sbom }}
-            ${{ steps.licensing.outputs.licenses }}
-            ${{ steps.licensing.outputs.notices }}
+            ${{ steps.licensing.outputs.sbom-path }}
+            ${{ steps.licensing.outputs.licenses-path }}
+            ${{ steps.licensing.outputs.notices-path }}
 
       - name: tear down devcontainer
         if: ${{ always() }}
@@ -265,16 +265,27 @@ jobs:
         uses: actions/download-artifact@v5
         with:
           pattern: fwpkg-*
-          path: ./artifacts
+          path: ./fwpkg
           merge-multiple: true
 
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          pattern: build-artifacts-*
+          path: ./build-artifacts
+
       - shell: bash
-        run: ls -l artifacts
+        run: |
+          ls -l fwpkg
+          ls -l build-artifacts
 
       - name: Create Release in this Repo
         uses: ci4rail/fw_esp-action/actions/release@v10
         with:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
-            artifacts/*
-            artifacts/in/*
+            fwpkg/*
+            fwpkg/in/*
+            build-artifacts/${{ needs.build.outputs.sbom-file }}
+            build-artifacts/${{ needs.build.outputs.licenses-file }}
+            build-artifacts/${{ needs.build.outputs.notices-file }}
