@@ -2,11 +2,11 @@ name: "Sign ESP Binary"
 description: |
   Sign the digest of an ESP binary (bootloader or app) using Azure Key Vault. 
   The action will create signature files, one for each key, named:
-  <binary_file>-signature-0
-  <binary_file>-signature-1
-  # And the public key for each key
-  # $binary_file-0-pub.pem
-  # $binary_file-1-pub.pem
+  <binary>-signature-0
+  <binary>-signature-1
+  And the public key for each key
+  <binary>-0-pub.pem
+  <binary>-1-pub.pem
 
 inputs:
   binary:

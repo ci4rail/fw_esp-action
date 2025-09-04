@@ -1,5 +1,8 @@
 name: "ESP Firmware Build Action"
-description: "Build ESP firmware using the devcontainer used in the project"
+description: |
+  Build ESP firmware using the devcontainer used in the project.
+  Requires a fw-package.env in the project with PKG_FIRMWARE_NAME variable set.
+
 inputs:
   app-build-command:
     description: "command to execute in container to build app (e.g. idf.py build or make build-secure)"

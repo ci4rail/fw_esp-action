@@ -1,5 +1,7 @@
 name: "ESP Firmware Create Firmware Package Action"
-description: "Create a firmware package file. Build step must have been run before this action."
+description: |
+  Create a firmware package file. Build step must have been run before this action.
+  Requires a fw-package.env in the project with PKG_FULL_HW_NAME and PKG_COMPATIBLE_MAJOR_REVS variables set.
 
 inputs:
   output-file-suffix:

@@ -4,7 +4,8 @@ description: |
   Expects the binaries in the build dir.
   Expects the flash_bootloader_args and flash_project_args files to be present in the build dir.
 
-  E.g. when app-file is called "fw-abc-default-1.0.10-staging.bin", the resulting factory image will be named 
+  E.g. when app-file is called "fw-abc-default-1.0.10-staging.bin", the resulting factory 
+  image will be named according to the output-file input, e.g.
                                "fw-abc-default-1.0.10-staging-factory.bin".
 inputs:
   output-file:

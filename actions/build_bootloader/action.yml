@@ -1,6 +1,7 @@
 name: "ESP Firmware Build Bootloader Action"
-description: "Build ESP bootloader using the devcontainer used in the project"
-
+description: |
+  Build ESP bootloader using the devcontainer used in the project
+  Requires a Makefile with a "bootloader" target
 runs:
   using: "composite"
   steps:
