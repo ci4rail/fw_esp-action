@@ -207,7 +207,7 @@ jobs:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
             build-artifacts/${{ needs.build.outputs.app-file }}
-            build-artifacts/${{ needs.create_fwpkg.outputs.fwpkg }}
+            build-artifacts/${{ needs.build.outputs.fwpkg }}
             build-artifacts/${{ needs.build.outputs.sbom }}
             build-artifacts/${{ needs.build.outputs.licenses }}
             build-artifacts/${{ needs.build.outputs.notices }}
@@ -219,7 +219,7 @@ jobs:
           public-repo: ${{ inputs.public-release-repo }}
           assets: |
             build-artifacts/${{ needs.build.outputs.app-file }}
-            build-artifacts/${{ needs.create_fwpkg.outputs.fwpkg }}
+            build-artifacts/${{ needs.build.outputs.fwpkg }}
             build-artifacts/${{ needs.build.outputs.sbom }}
             build-artifacts/${{ needs.build.outputs.licenses }}
             build-artifacts/${{ needs.build.outputs.notices }}
