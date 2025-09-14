@@ -83,6 +83,7 @@ jobs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
+      factory-file: ${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
       sbom: ${{ steps.licensing.outputs.sbom-file }}
       licenses: ${{ steps.licensing.outputs.licenses-file }}
       notices: ${{ steps.licensing.outputs.notices-file }}
@@ -146,6 +147,7 @@ jobs:
           path: |
             ${{ steps.build_app.outputs.app-file-path }}
             ${{ steps.build_app.outputs.build-dir }}/${{ steps.create_fwpkg.outputs.fwpkg }}
+            ${{ steps.build_app.outputs.build-dir }}/${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
             ${{ steps.licensing.outputs.sbom-path }}
             ${{ steps.licensing.outputs.licenses-path }}
             ${{ steps.licensing.outputs.notices-path }}
@@ -208,6 +210,7 @@ jobs:
           assets: |
             build-artifacts/${{ needs.build.outputs.app-file }}
             build-artifacts/${{ needs.build.outputs.fwpkg }}
+            build-artifacts/${{ needs.build.outputs.factory-file }}
             build-artifacts/${{ needs.build.outputs.sbom }}
             build-artifacts/${{ needs.build.outputs.licenses }}
             build-artifacts/${{ needs.build.outputs.notices }}
