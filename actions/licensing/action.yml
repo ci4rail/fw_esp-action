@@ -67,22 +67,18 @@ runs:
         echo "notices-path=${notices_path}" >> $GITHUB_OUTPUT
         echo "notices-file=${notices_file}" >> $GITHUB_OUTPUT
 
+    - name: pack licensing files
+      shell: bash
+      run: |
+        cd ${{ inputs.build-dir }}
+        tar -czf licensing.tar.gz {{ steps.sbom.outputs.sbom-file}} {{ steps.licenses.outputs.licenses-file}} {{ steps.notices.outputs.notices-file}}
+        echo "licensing-info-path=${{ inputs.build-dir }}/licensing.tar.gz" >> $GITHUB_OUTPUT
+        echo "licensing-info-file=licensing.tar.gz" >> $GITHUB_OUTPUT
+
 outputs:
-  sbom-path:
-    description: "Software Bill of Materials (with path)"
+  licensing-info-path:
+    description: "Licensing info archive (with path)"
     value: ${{ steps.sbom.outputs.sbom-path}}
-  sbom-file:
-    description: "Software Bill of Materials (without path)"
-    value: ${{ steps.sbom.outputs.sbom-file }}
-  licenses-path:
-    description: "LICENSE files archive (with path)"
-    value: ${{ steps.licenses.outputs.licenses-path }}
-  licenses-file:
-    description: "LICENSE files archive (without path)"
-    value: ${{ steps.licenses.outputs.licenses-file }}
-  notices-path:
-    description: "Open Source Notices"
-    value: ${{ steps.notices.outputs.notices-path }}
-  notices-file:
-    description: "Open Source Notices (without path)"
-    value: ${{ steps.notices.outputs.notices-file }}
+  licensing-info-file:
+    description: "Licensing info archive"
+    value: ${{ steps.sbom.outputs.sbom-file}}

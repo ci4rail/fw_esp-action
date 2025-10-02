@@ -93,9 +93,7 @@ jobs:
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
       chip: ${{ steps.build_app.outputs.chip }}
-      sbom: ${{ steps.licensing.outputs.sbom-file }}
-      licenses: ${{ steps.licensing.outputs.licenses-file }}
-      notices: ${{ steps.licensing.outputs.notices-file }}
+      licensing-info: ${{ steps.licensing.outputs.licensing-info-file }}
 
     steps:
       - name: Checkout repository
@@ -133,9 +131,7 @@ jobs:
             ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
             ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
             ${{ steps.build_app.outputs.build-dir}}/flash_project_args
-            ${{ steps.licensing.outputs.sbom-path }}
-            ${{ steps.licensing.outputs.licenses-path }}
-            ${{ steps.licensing.outputs.notices-path }}
+            ${{ steps.licensing.outputs.licensing-info-path }}
 
       - name: tear down devcontainer
         if: ${{ always() }}
@@ -293,9 +289,7 @@ jobs:
           assets: |
             fwpkg/*
             fwpkg/in/*
-            build-artifacts/${{ needs.build.outputs.sbom }}
-            build-artifacts/${{ needs.build.outputs.licenses }}
-            build-artifacts/${{ needs.build.outputs.notices }}
+            build-artifacts/${{ needs.build.outputs.licensing-info }}
 
 
       - name: Create Release in Public Repo
@@ -305,7 +299,5 @@ jobs:
           public-repo: ${{ inputs.public-release-repo }}
           assets: |
             fwpkg/*production*.fwpkg
-            build-artifacts/${{ needs.build.outputs.sbom }}
-            build-artifacts/${{ needs.build.outputs.licenses }}
-            build-artifacts/${{ needs.build.outputs.notices }}
+            build-artifacts/${{ needs.build.outputs.licensing-info }}
           access-token: ${{ secrets.access-token }}
