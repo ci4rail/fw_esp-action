@@ -40,6 +40,7 @@ runs:
         sudo apt-get update
         sudo apt-get install -y python3-pip file
         ${{ github.action_path }}/download-licenses.sh
+        cp ${{ github.action_path }}/LicenseRef-Proprietary-Ci4Rail.txt ../LICENSES/
         license_file=licenses.tar.gz
         license_path=${{ inputs.build-dir }}/${license_file}
         tar -czf ${license_file} ../LICENSES
