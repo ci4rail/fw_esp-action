@@ -84,9 +84,7 @@ jobs:
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
       factory-file: ${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
-      sbom: ${{ steps.licensing.outputs.sbom-file }}
-      licenses: ${{ steps.licensing.outputs.licenses-file }}
-      notices: ${{ steps.licensing.outputs.notices-file }}
+      licensing-info: ${{ steps.licensing.outputs.licensing-info-file }}
       fwpkg: ${{ steps.create_fwpkg.outputs.fwpkg }}
 
     steps:
@@ -211,9 +209,7 @@ jobs:
             build-artifacts/${{ needs.build.outputs.app-file }}
             build-artifacts/${{ needs.build.outputs.fwpkg }}
             build-artifacts/${{ needs.build.outputs.factory-file }}
-            build-artifacts/${{ needs.build.outputs.sbom }}
-            build-artifacts/${{ needs.build.outputs.licenses }}
-            build-artifacts/${{ needs.build.outputs.notices }}
+            build-artifacts/${{ needs.build.outputs.licensing-info }}
 
       - name: Create Release in Public Repo
         if: ${{ inputs.public-release-repo != '' }}
@@ -223,7 +219,5 @@ jobs:
           assets: |
             build-artifacts/${{ needs.build.outputs.app-file }}
             build-artifacts/${{ needs.build.outputs.fwpkg }}
-            build-artifacts/${{ needs.build.outputs.sbom }}
-            build-artifacts/${{ needs.build.outputs.licenses }}
-            build-artifacts/${{ needs.build.outputs.notices }}
+            build-artifacts/${{ needs.build.outputs.licensing-info }}
           access-token: ${{ secrets.access-token }}
