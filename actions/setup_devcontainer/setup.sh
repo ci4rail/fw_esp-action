@@ -28,4 +28,4 @@ echo "UID=${uid} GID=${gid}"
 docker exec ${container_name} bash -c "\
     groupadd -g "$gid" hostgrp && \
     useradd -M -s /bin/bash -u "$uid" -g hostgrp hostusr && \
-    mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr"
+    mkdir -p /home/hostusr && chown hostusr:hostgrp /home/hostusr && chown -R /opt/esp/idf"
