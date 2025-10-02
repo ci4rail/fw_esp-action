@@ -1,0 +1,229 @@
+name: ESP32 Standard Firmware Workflow
+
+on:
+  workflow_call:
+    inputs:
+      build-dfu:
+        description: "Whether to build dfu binary"
+        required: false
+        type: boolean
+        default: false
+      teststation-broker:
+        description: "IP:Port of MQTT broker where test station listens to"
+        type: string
+        required: true
+      teststation-master-topic:
+        description: "teststation request is published to <master-topic>/request"
+        required: false
+        type: string
+        default: "teststation"
+      teststation-request-timeout:
+        description: "Time in seconds to wait for teststation to become available"
+        required: false
+        type: number
+        default: 3600
+      test-name:
+        description: |
+          Name of the test to execute (must match an entry in the test schedulers config file)
+          If empty, skip test execution
+        type: string
+        required: true
+      test-device-name:
+        description: "Device id as listed in test schedulers config file to run the test on test station"
+        type: string
+        required: true
+      target-commitish:
+        description: "The commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Default: the repository's default branch (usually main)."
+        type: string
+        required: false
+        default: ""
+      minio-bucket:
+        description: "bucket on minio to push test images to"
+        type: string
+        required: false
+        default: "esp-fw-testing"
+      public-release-repo:
+        description: "Public release repository. (don't publish if empty)"
+        type: string
+        required: false
+        default: ""
+      license-contact:
+        description: "License contact email"
+        type: string
+        required: true
+      company:
+        description: "Company name"
+        type: string
+        required: true
+      generate-licesing-info:
+        description: "Whether to generate licensing info (SBOM, LICENSES, OPEN_SOURCE_NOTICES.txt)"
+        required: false
+        type: boolean
+        default: true
+
+    secrets:
+      access-token:
+        description: "Personal access token for private repos"
+        required: true
+      tailscale-key:
+        description: "a reusable tailscale key"
+        required: true
+      minio-access-key:
+        description: "Access key for minio"
+        required: true
+      minio-secret-key:
+        description: "Secret key for minio"
+        required: true
+
+jobs:
+  build:
+    runs-on: [self-hosted, linux, x64]
+
+    outputs:
+      project-name: ${{ steps.build_app.outputs.project-name }}
+      version: ${{ steps.build_app.outputs.version }}
+      app-file: ${{ steps.build_app.outputs.app-file }}
+      factory-file: ${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
+      sbom: ${{ steps.licensing.outputs.sbom-file }}
+      licenses: ${{ steps.licensing.outputs.licenses-file }}
+      notices: ${{ steps.licensing.outputs.notices-file }}
+      fwpkg: ${{ steps.create_fwpkg.outputs.fwpkg }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ secrets.access-token }}
+
+      - name: Start esp-idf Devcontainer
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
+
+      - name: Build App
+        id: build_app
+        uses: ci4rail/fw_esp-action/actions/build_app@v10        
+        with:
+          app-build-command: idf.py build
+          build-dfu: ${{ inputs.build-dfu }}
+
+      - name: Generate Licensing Info
+        if: ${{ inputs.generate-licesing-info }}
+        uses: ci4rail/fw_esp-action/actions/licensing@v10
+        id: licensing
+        with:
+          build-dir: ${{ steps.build_app.outputs.build-dir }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
+          license-contact: ${{ inputs.license-contact }}
+          company: ${{ inputs.company }}
+
+      - name: Create firmware package
+        id: create_fwpkg
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        with:
+          output-file-suffix: ""
+          app-binary: ${{ steps.build_app.outputs.app-file-path }}
+          project-name: ${{ steps.build_app.outputs.project-name }}
+          version: ${{ steps.build_app.outputs.version }}
+
+      - name: Move fwpkg to build dir
+        shell: bash
+        run: |
+          mv ${{ steps.create_fwpkg.outputs.fwpkg }} ${{ steps.build_app.outputs.build-dir }}/
+
+      - name: Build Merged Factory binary
+        uses: ci4rail/fw_esp-action/actions/factory_image@v10
+        with:
+          chip: ${{ steps.build_app.outputs.chip }}
+          build-dir: ${{ steps.build_app.outputs.build-dir }}
+          app-file: ${{ steps.build_app.outputs.app-file }}
+          bootloader-file-pattern: "*bootloader.bin"
+          output-file: ${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
+
+      - name: Upload build outputs to artifact storage
+        uses: actions/upload-artifact@v4
+        with:
+          name: build_output
+          path: |
+            ${{ steps.build_app.outputs.app-file-path }}
+            ${{ steps.build_app.outputs.build-dir }}/${{ steps.create_fwpkg.outputs.fwpkg }}
+            ${{ steps.build_app.outputs.build-dir }}/${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
+            ${{ steps.licensing.outputs.sbom-path }}
+            ${{ steps.licensing.outputs.licenses-path }}
+            ${{ steps.licensing.outputs.notices-path }}
+
+      - name: tear down devcontainer
+        if: ${{ always() }}
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
+
+
+  # Execute steps in an github runner (not selfhosted)
+  # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
+  test:
+    if: inputs.test-name != ''
+    needs: [build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Excecute Test on Test station
+        uses: ci4rail/fw_esp-action/actions/test@v10
+        id: test
+        with:
+          teststation-broker: ${{ inputs.teststation-broker }}
+          teststation-master-topic: ${{ inputs.teststation-master-topic }}
+          teststation-request-timeout: ${{ inputs.teststation-request-timeout }}
+          test-name: ${{ inputs.test-name }}
+          test-device-name: ${{ inputs.test-device-name }}
+          minio-access-key: ${{ secrets.minio-access-key }}
+          minio-secret-key: ${{ secrets.minio-secret-key }}
+          minio-bucket: ${{ inputs.minio-bucket }}
+          access-token: ${{ secrets.access-token }}
+          tailscale-key: ${{ secrets.tailscale-key }}
+          project-name: ${{ needs.build.outputs.project-name }}
+          version: ${{ needs.build.outputs.version }}
+
+  release:
+    needs: [build, test]
+    if: ${{ always() && (github.ref_type == 'tag') && (needs.test.result == 'success' || needs.test.result == 'skipped') && (needs.build.result == 'success') }}
+    runs-on: ubuntu-latest
+    steps:
+      # we need to checkout the repo to generate the release notes for the public repo
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: "recursive"
+          token: ${{ secrets.access-token }}
+
+      - name: Download Build Artifacts
+        uses: actions/download-artifact@v5
+        with:
+          name: build_output
+          path: ./build-artifacts
+
+      - shell: bash
+        run: |
+          ls -lR build-artifacts
+
+      - name: Create Release in this Repo
+        uses: ci4rail/fw_esp-action/actions/release@v10
+        with:
+          target_commitish: ${{ inputs.target-commitish }}
+          assets: |
+            build-artifacts/${{ needs.build.outputs.app-file }}
+            build-artifacts/${{ needs.build.outputs.fwpkg }}
+            build-artifacts/${{ needs.build.outputs.factory-file }}
+            build-artifacts/${{ needs.build.outputs.sbom }}
+            build-artifacts/${{ needs.build.outputs.licenses }}
+            build-artifacts/${{ needs.build.outputs.notices }}
+
+      - name: Create Release in Public Repo
+        if: ${{ inputs.public-release-repo != '' }}
+        uses: ci4rail/fw_esp-action/actions/release_public@v10
+        with:
+          public-repo: ${{ inputs.public-release-repo }}
+          assets: |
+            build-artifacts/${{ needs.build.outputs.app-file }}
+            build-artifacts/${{ needs.build.outputs.fwpkg }}
+            build-artifacts/${{ needs.build.outputs.sbom }}
+            build-artifacts/${{ needs.build.outputs.licenses }}
+            build-artifacts/${{ needs.build.outputs.notices }}
+          access-token: ${{ secrets.access-token }}

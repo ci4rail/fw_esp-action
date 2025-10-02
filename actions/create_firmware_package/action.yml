@@ -1,0 +1,45 @@
+name: "ESP Firmware Create Firmware Package Action"
+description: |
+  Create a firmware package file. Build step must have been run before this action.
+  Requires a fw-package.env in the project with PKG_FULL_HW_NAME and PKG_COMPATIBLE_MAJOR_REVS variables set.
+
+inputs:
+  output-file-suffix:
+    description: "Suffix to append to the output firmware package file (e.g. -staging)"
+    required: true
+  app-binary:
+    description: "Path to the application binary"
+    required: true
+  project-name:
+    description: "Project name, e.g. fw-sio06-02-default"
+    required: true
+  version:
+    description: "Version string, e.g. 1.0.0"
+    required: true
+  fw-package-env:
+    description: "Path to the firmware package environment file"
+    required: false
+    default: "fw-package.env"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Package
+      shell: bash
+      id: fwpkg
+      run: |
+        source ${{ inputs.fw-package-env }}
+        variant=$(echo ${{ inputs.project-name }} | cut -d - -f 3- )
+
+        ${{ github.action_path }}/io4edge-make-fwpkg.sh \
+          "${{ inputs.app-binary }}" \
+          "${PKG_FULL_HW_NAME}" \
+          "${variant}" \
+          "${{ inputs.version }}" \
+          "${PKG_COMPATIBLE_MAJOR_REVS}" \
+          "${{ inputs.output-file-suffix }}"
+
+outputs:
+  fwpkg:
+    description: "Path to the created firmware package file"
+    value: ${{ steps.fwpkg.outputs.fwpkg }}

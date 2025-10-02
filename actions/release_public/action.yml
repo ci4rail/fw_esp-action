@@ -1,0 +1,37 @@
+name: "Generate Github Release in Public Repository"
+description: |
+  Create a new GitHub release for the firmware package in the specified repository
+  Using the same release notes as in the private repository
+
+inputs:
+  public-repo:
+    description: "The public repository to release the firmware package"
+    required: true
+  assets: 
+    description: assets to include in the release, separated by newline
+    required: true
+  access-token:
+    description: "Personal access token for the public repository"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Get release notes from source repo
+      shell: bash
+      id: notes
+      run: |
+        echo "getting release notes for ${{ github.ref_name }}"
+        gh release view ${{ github.ref_name }} --json body -q .body > ${{ github.workspace }}-RELNOTES.md
+        # remove the line with "Full Changelog". We don't want that in the public repo
+        sed -i '/Full Changelog/d' ${{ github.workspace }}-RELNOTES.md
+      env:
+        GH_TOKEN: ${{ github.token }}
+
+    - name: Release in public repo
+      uses: softprops/action-gh-release@v2
+      with:
+        body_path: ${{ github.workspace }}-RELNOTES.md
+        files: ${{ inputs.assets }}
+        repository: ${{ inputs.public-repo }}
+        token: ${{ inputs.access-token }}

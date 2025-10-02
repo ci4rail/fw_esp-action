@@ -1,0 +1,82 @@
+name: "ESP Firmware Test Action"
+description: "Run test on a test station"
+
+inputs:
+  teststation-broker:
+    description: "IP:Port of MQTT broker where test station listens to"
+    required: true
+  teststation-master-topic:
+    description: "teststation request is published to <master-topic>/request"
+    required: false
+    default: "teststation"
+  teststation-request-timeout:
+    description: "Time in seconds to wait for teststation to become available"
+    required: false
+    default: "3600"
+  test-name:
+    description: |
+      Name of the test to execute (must match an entry in the test schedulers config file)
+    required: true
+  test-device-name:
+    description: "Device id as listed in test schedulers config file to run the test on test station"
+    required: true
+  minio-access-key:
+    description: "Access key for minio"
+    required: true
+  minio-secret-key:
+    description: "Secret key for minio"
+    required: true
+  minio-bucket:
+    description: "bucket on minio to push test images to"
+    required: true
+  access-token:
+    description: "Personal access token for private repos"
+    required: true
+  tailscale-key:
+    description: "a reusable tailscale key"
+    required: true
+  project-name:
+    description: "Project name"
+    required: true
+  version:
+    description: "Firmware version"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Download firmware package
+      uses: actions/download-artifact@v4
+      with:
+        pattern: fwpkg-staging
+        path: ./artifacts
+
+    - name: Upload to minio for testing
+      uses: hkdobrev/minio-deploy-action@v1.1
+      with:
+        endpoint: https://minio.ci4rail.com
+        access_key: ${{ inputs.minio-access-key }}
+        secret_key: ${{ inputs.minio-secret-key }}
+        bucket: ${{ inputs.minio-bucket }}
+        source_dir: ./artifacts/fwpkg-staging/
+        target_dir: "/"
+
+    - name: Test firmware package for development
+      uses: ci4rail/teststation-action@v5
+      with:
+        pipeline-name: "${{ github.run_id }}"
+        mqtt-broker-url: "${{ inputs.teststation-broker }}"
+        test-name: ${{ inputs.test-name }}
+        artifact-override: |
+          {
+            \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ inputs.project-name }}\",
+            \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ inputs.version }}\",
+            \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"ci4rail-minio\",
+            \"desired_versions.${{ inputs.test-device-name }}.source.bucket\": \"${{ inputs.minio-bucket }}\",
+            \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
+          }
+        access-token: ${{ inputs.access-token }}
+        tailscale-key: ${{ inputs.tailscale-key }}
+        request-timeout: ${{ inputs.teststation-request-timeout }}
+        minio_access_key: ${{ inputs.minio-access-key }}
+        minio_secret_key: ${{ inputs.minio-secret-key }}

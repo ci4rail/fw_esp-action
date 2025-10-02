@@ -1,0 +1,28 @@
+name: "Setup esp-idf devcontainer"
+description: |
+  Get the Docker image used for building the ESP firmware from .devcontainer/devcontainer.json".
+  Start the devcontainer with the appropriate settings in background so we can 
+  "docker exec" into it later to run commands.
+runs:
+  using: "composite"
+  steps:
+    - name: Setup esp-idf devcontainer
+      shell: bash
+      id: setup
+      run: |
+        if [ -f .devcontainer/devcontainer.json ]; then
+            builder_image=$(jq -r '.image' .devcontainer/devcontainer.json)
+            echo "devcontainer.json exists, builder image is $builder_image"
+        else
+            echo "No devcontainer.json found, exiting"
+            exit 1
+        fi
+
+        container_name=esp-devc-${{ github.run_id }}
+        echo "builder-container-name=${container_name}" >> "$GITHUB_OUTPUT"
+        ${{ github.action_path }}/setup.sh "${builder_image}" "$(id -u)" "$(id -g)" "${container_name}"  
+
+outputs:
+  builder-container-name:
+    description: "Docker container name"
+    value: ${{ steps.setup.outputs.builder-container-name }}

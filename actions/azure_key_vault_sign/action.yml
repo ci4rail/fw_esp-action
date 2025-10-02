@@ -1,0 +1,53 @@
+name: "Sign ESP Binary"
+description: |
+  Sign the digest of an ESP binary (bootloader or app) using Azure Key Vault. 
+  The action will create signature files, one for each key, named:
+  <binary>-signature-0
+  <binary>-signature-1
+  And the public key for each key
+  <binary>-0-pub.pem
+  <binary>-1-pub.pem
+
+inputs:
+  binary:
+    description: "The binary file (with path) to sign."
+    required: true
+  azure_subscription_id:
+    description: "The Azure subscription ID."
+    required: true
+  azure_tenant_id:
+    description: "The Azure tenant ID."
+    required: true
+  azure_app_id:
+    description: "The Azure app ID that has access to vault signing keys"
+    required: true
+  key_ids:
+    description: "The keys used for signing firmware, newline separated. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g0\\nhttps://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g1"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    # self-hosted runner currently doesn't have az cli installed...
+    - name: Install AZ CLI
+      shell: bash
+      run: |
+        if ! command -v az &> /dev/null; then
+            echo "Azure CLI not found. Installing..." >&2
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        else
+            echo "Azure CLI is already installed." >&2
+        fi
+
+    - name: Azure OIDC login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure_app_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: Sign digest with Key Vault
+      id: gen_signature
+      shell: bash
+      run: |
+        ${{ github.action_path }}/gen-signatures.sh "${{ inputs.binary }}" "${{ inputs.key_ids }}"

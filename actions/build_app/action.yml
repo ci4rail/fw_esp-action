@@ -1,0 +1,49 @@
+name: "ESP Firmware Build Action"
+description: |
+  Build ESP firmware using the devcontainer used in the project.
+  Requires a fw-package.env in the project with PKG_FIRMWARE_NAME variable set.
+
+inputs:
+  app-build-command:
+    description: "command to execute in container to build app (e.g. idf.py build or make build-secure)"
+    required: true
+  build-dfu:
+    description: "Whether to build dfu binary"
+    required: false
+    default: "false"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Build App
+      shell: bash
+      id: build
+      run: |
+        rm -rf build*
+        project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
+        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ inputs.app-build-command }}"  
+        ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${project}"
+
+outputs:
+  project-name:
+    description: "Project name"
+    value: ${{ steps.build.outputs.project }}
+  version:
+    description: "App version"
+    value: ${{ steps.build.outputs.version }}
+  app-file:
+    description: "App file without path (with project name and version)"
+    value: ${{ steps.build.outputs.app-file }}
+  app-file-path:
+    description: "App file path"
+    value: ${{ steps.build.outputs.app-file-path }}
+  build-dir:
+    description: "Build directory"
+    value: ${{ steps.build.outputs.build-dir }}
+  dfu-file:
+    description: "DFU file path"
+    value: ${{ steps.build.outputs.dfu-file }}
+  chip:
+    description: "Chip type"
+    value: ${{ steps.build.outputs.chip }}

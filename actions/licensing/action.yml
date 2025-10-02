@@ -1,0 +1,88 @@
+name: "Generate Licensing Info for Release"
+description: |
+  generate SBOM, LICENSES and OPEN_SOURCE_NOTICES.txt
+inputs:
+  build-dir:
+    description: "Build directory"
+    required: true
+  project-name:
+    description: "Project name"
+    required: true
+  version:
+    description: "Project version"
+    required: true
+  license-contact:
+    description: "License contact email"
+    required: true
+  company:
+    description: "Company name"
+    required: true
+
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate SBOM
+      id: sbom
+      shell: bash
+      run: |
+        sbom_file=sbom.spdx
+        sbom_path=${{ inputs.build-dir }}/${sbom_file}
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} \
+          "esp-idf-sbom create --rem-unused --rem-submodules --rem-config --file-tags -o ${sbom_path} ${{ inputs.build-dir }}/project_description.json"
+        echo "sbom-path=${sbom_path}" >> $GITHUB_OUTPUT
+        echo "sbom-file=${sbom_file}" >> $GITHUB_OUTPUT
+
+    - name: Generate LICENSE files
+      shell: bash
+      id: licenses
+      run: |
+        cd ${{ inputs.build-dir }}
+        sudo apt-get update
+        sudo apt-get install -y python3-pip file
+        ${{ github.action_path }}/download-licenses.sh
+        license_file=licenses.tar.gz
+        license_path=${{ inputs.build-dir }}/${license_file}
+        tar -czf ${license_file} ../LICENSES
+        echo "licenses-path=${license_path}" >> $GITHUB_OUTPUT
+        echo "licenses-file=${license_file}" >> $GITHUB_OUTPUT
+
+    - name: Create OPEN_SOURCE_NOTICES.txt
+      shell: bash
+      id: notices
+      run: |
+        cd ${{ inputs.build-dir }}
+        sudo apt-get install -y gettext-base
+        export PRODUCT_NAME=${{ inputs.project-name }}
+        export VERSION=${{ inputs.version }}
+        export BUILD_DATE="$(date -u +%F)"
+        export RELEASE_URL="https://github.com/${{ github.repository }}/releases/tag/${GITHUB_REF_NAME#refs/tags/}"
+        export CONTACT_EMAIL=${{ inputs.license-contact }}
+        export YEAR="$(date -u +%Y)"
+        export COMPANY=${{ inputs.company }}
+
+        envsubst < ${{ github.action_path }}/OPEN_SOURCE_NOTICES.tmpl.txt > OPEN_SOURCE_NOTICES.txt
+        notices_file=OPEN_SOURCE_NOTICES.txt
+        notices_path=${{ inputs.build-dir }}/${notices_file}
+        echo "notices-path=${notices_path}" >> $GITHUB_OUTPUT
+        echo "notices-file=${notices_file}" >> $GITHUB_OUTPUT
+
+outputs:
+  sbom-path:
+    description: "Software Bill of Materials (with path)"
+    value: ${{ steps.sbom.outputs.sbom-path}}
+  sbom-file:
+    description: "Software Bill of Materials (without path)"
+    value: ${{ steps.sbom.outputs.sbom-file }}
+  licenses-path:
+    description: "LICENSE files archive (with path)"
+    value: ${{ steps.licenses.outputs.licenses-path }}
+  licenses-file:
+    description: "LICENSE files archive (without path)"
+    value: ${{ steps.licenses.outputs.licenses-file }}
+  notices-path:
+    description: "Open Source Notices"
+    value: ${{ steps.notices.outputs.notices-path }}
+  notices-file:
+    description: "Open Source Notices (without path)"
+    value: ${{ steps.notices.outputs.notices-file }}

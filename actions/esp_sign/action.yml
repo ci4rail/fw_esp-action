@@ -1,0 +1,43 @@
+name: "Sign ESP Binary"
+description: |
+  Sign a ESP binary (bootloader or app) using the signatures generated e.g. by Azure Key Vault. 
+  The signing process modifies the binary in place, so the input binary will be signed after this action.
+  For convinience the path of the signed binary is also available as output.
+  It expects the signature files and public key files to be in the same directory as the binary, named:
+  <binary>-signature-0
+  <binary>-signature-1
+  ...
+  <binary>-0-pub.pem
+  <binary>-1-pub.pem
+  ...
+inputs:
+  binary:
+    description: "The binary file (with path) to sign."
+    required: true
+  key_ids:
+    description: "The keys used for signing firmware, newline separated. e.g. https://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g0\\nhttps://firmware-key-test.vault.azure.net/keys/ci4rail-sio06-00-g1"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Sign images with espsecure
+      id: sign
+      shell: bash
+      run: |
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/sign.sh ${{ inputs.binary }} ${{ inputs.key_ids }}"
+
+    - name: Determine signed binary file name without path
+      id: sign_file
+      shell: bash
+      run: |
+        signed_binary_file=$(basename "${{ inputs.binary }}")
+        echo "signed-binary-file=${signed_binary_file}" >> $GITHUB_OUTPUT
+
+outputs:
+  signed-binary-path:
+    description: "Path to the signed binary"
+    value: ${{ inputs.binary }}
+  signed-binary-file:
+    description: "File name of the signed binary"
+    value: ${{ steps.sign_file.outputs.signed-binary-file }}

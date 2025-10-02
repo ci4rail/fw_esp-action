@@ -1,0 +1,33 @@
+name: "ESP Firmware Build Bootloader Action"
+description: |
+  Build ESP bootloader using the devcontainer used in the project
+  Requires a Makefile with a "bootloader" target
+runs:
+  using: "composite"
+  steps:
+    - name: Build Bootloader
+      shell: bash
+      id: build
+      run: |
+        rm -rf build*
+        project=$(grep -m1 -o 'project([^)]*)' CMakeLists.txt | sed 's/project(\(.*\))/\1/')
+        echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }}  "make bootloader"  
+        ${{ github.action_path }}/post_build.sh "${project}"
+
+outputs:
+  project-name:
+    description: "Project name"
+    value: ${{ steps.identify.outputs.project }}
+  version:
+    description: "Bootloader version"
+    value: ${{ steps.build.outputs.version }}
+  bootloader-file:
+    description: "Bootloader file without path (with project name and version)"
+    value: ${{ steps.build.outputs.bootloader-file }}
+  bootloader-file-path:
+    description: "Bootloader path (with project name and version)"
+    value: ${{ steps.build.outputs.bootloader-file-path }}
+  build-dir:
+    description: "Build directory"
+    value: ${{ steps.build.outputs.build-dir }}

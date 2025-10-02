@@ -1,0 +1,36 @@
+name: "Generate Factory Image"
+description: |
+  Create a factory image (flashable binary)
+  Expects the binaries in the build dir.
+  Expects the flash_bootloader_args and flash_project_args files to be present in the build dir.
+
+  E.g. when app-file is called "fw-abc-default-1.0.10-staging.bin", the resulting factory 
+  image will be named according to the output-file input, e.g.
+                               "fw-abc-default-1.0.10-staging-factory.bin".
+inputs:
+  output-file:
+    description: "Output file name (e.g. my_project-1.0.0-staging-factory.bin)"
+    required: true
+  build-dir: 
+    description: build directory containing the binaries (e.g. build)
+    required: true
+  bootloader-file-pattern: 
+    description: |
+      bootloader file pattern to search for in the build directory.
+    required: true
+  app-file: 
+    description: |
+      app file to include in the factory image (e.g. build/my_project.bin).
+      For products using secure boot, pass the signed app binary here.
+    required: true
+  chip:
+    description: "Chip type (e.g. esp32)"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - name: Generate merged factory binary
+      shell: bash
+      run: |
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}"
