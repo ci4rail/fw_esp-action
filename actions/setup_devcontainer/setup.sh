@@ -14,7 +14,6 @@ container_name=$4
 set -x
 
 docker run --name ${container_name} -d --entrypoint tail \
- --name ${container_name} \
  -v $PWD:/workspace \
  -v /runner:/runner \
  -w /workspace \

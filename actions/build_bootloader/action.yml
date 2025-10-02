@@ -18,7 +18,7 @@ runs:
 outputs:
   project-name:
     description: "Project name"
-    value: ${{ steps.identify.outputs.project }}
+    value: ${{ steps.build.outputs.project }}
   version:
     description: "Bootloader version"
     value: ${{ steps.build.outputs.version }}

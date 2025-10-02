@@ -10,11 +10,9 @@ set -o pipefail
 binary_file=$1
 
 if [ "$#" -ne 1 ]; then
-    echo "Usage: $0 <binary_file> <key_ids>"
+    echo "Usage: $0 <binary_file>"
     exit 1
 fi
-
-mapfile -t KEYS < <(printf '%s\n' "$key_ids" | tr -d '\r' | sed '/^[[:space:]]*$/d')
 
 append_opt=""
 

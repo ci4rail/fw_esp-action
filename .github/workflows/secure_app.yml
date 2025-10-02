@@ -235,7 +235,7 @@ jobs:
         env: [staging]   # only staging
     environment: ${{ matrix.env }}    
     steps:
-      - name: Excecute Test on Test station
+      - name: Execute Test on Test station
         uses: ci4rail/fw_esp-action/actions/test@v10
         id: test
         with:
