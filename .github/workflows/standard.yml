@@ -55,7 +55,7 @@ on:
         description: "Company name"
         type: string
         required: true
-      generate-licesing-info:
+      generate-licensing-info:
         description: "Whether to generate licensing info (SBOM, LICENSES, OPEN_SOURCE_NOTICES.txt)"
         required: false
         type: boolean
@@ -84,9 +84,7 @@ jobs:
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
       factory-file: ${{ steps.build_app.outputs.project-name }}-${{ steps.build_app.outputs.version }}-factory.bin
-      sbom: ${{ steps.licensing.outputs.sbom-file }}
-      licenses: ${{ steps.licensing.outputs.licenses-file }}
-      notices: ${{ steps.licensing.outputs.notices-file }}
+      licensing-info: ${{ steps.licensing.outputs.licensing-info-file }}
       fwpkg: ${{ steps.create_fwpkg.outputs.fwpkg }}
 
     steps:
@@ -107,7 +105,7 @@ jobs:
           build-dfu: ${{ inputs.build-dfu }}
 
       - name: Generate Licensing Info
-        if: ${{ inputs.generate-licesing-info }}
+        if: ${{ inputs.generate-licensing-info }}
         uses: ci4rail/fw_esp-action/actions/licensing@v10
         id: licensing
         with:
@@ -164,7 +162,7 @@ jobs:
     needs: [build]
     runs-on: ubuntu-latest
     steps:
-      - name: Excecute Test on Test station
+      - name: Execute Test on Test station
         uses: ci4rail/fw_esp-action/actions/test@v10
         id: test
         with:
@@ -211,9 +209,7 @@ jobs:
             build-artifacts/${{ needs.build.outputs.app-file }}
             build-artifacts/${{ needs.build.outputs.fwpkg }}
             build-artifacts/${{ needs.build.outputs.factory-file }}
-            build-artifacts/${{ needs.build.outputs.sbom }}
-            build-artifacts/${{ needs.build.outputs.licenses }}
-            build-artifacts/${{ needs.build.outputs.notices }}
+            build-artifacts/${{ needs.build.outputs.licensing-info }}
 
       - name: Create Release in Public Repo
         if: ${{ inputs.public-release-repo != '' }}
@@ -223,7 +219,5 @@ jobs:
           assets: |
             build-artifacts/${{ needs.build.outputs.app-file }}
             build-artifacts/${{ needs.build.outputs.fwpkg }}
-            build-artifacts/${{ needs.build.outputs.sbom }}
-            build-artifacts/${{ needs.build.outputs.licenses }}
-            build-artifacts/${{ needs.build.outputs.notices }}
+            build-artifacts/${{ needs.build.outputs.licensing-info }}
           access-token: ${{ secrets.access-token }}
