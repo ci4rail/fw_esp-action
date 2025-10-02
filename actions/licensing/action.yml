@@ -18,7 +18,6 @@ inputs:
     description: "Company name"
     required: true
 
-
 runs:
   using: "composite"
   steps:
@@ -71,7 +70,7 @@ runs:
       shell: bash
       run: |
         cd ${{ inputs.build-dir }}
-        tar -czf licensing.tar.gz {{ steps.sbom.outputs.sbom-file}} {{ steps.licenses.outputs.licenses-file}} {{ steps.notices.outputs.notices-file}}
+        tar -czf licensing.tar.gz ${{ steps.sbom.outputs.sbom-file}} ${{ steps.licenses.outputs.licenses-file}} ${{ steps.notices.outputs.notices-file}}
         echo "licensing-info-path=${{ inputs.build-dir }}/licensing.tar.gz" >> $GITHUB_OUTPUT
         echo "licensing-info-file=licensing.tar.gz" >> $GITHUB_OUTPUT
 
