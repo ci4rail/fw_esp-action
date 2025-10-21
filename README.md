@@ -138,7 +138,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@composite
+    uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@v10
     with:
       teststation-broker: lizard-rpi:1883
       test-name: ""
@@ -147,7 +147,7 @@ jobs:
       license-contact: "info@ci4rail.com"
       company: "Ci4rail GmbH"
       public-release-repo: ""
-      generate-licesing-info: false
+      generate-licensing-info: false
     secrets:
       access-token: ${{ secrets.FW_CI_TOKEN }}
       tailscale-key: ${{ secrets.YODA_TAILSCALE_AUTHKEY }}
