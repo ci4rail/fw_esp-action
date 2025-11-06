@@ -37,7 +37,7 @@ runs:
             exit 1
           fi
           echo "✓ Submodule ${name} (${path}) @ ${sha} has annotated tag(s): ${ann_tags}"
-
+        '
     - name: Generate SBOM
       id: sbom
       shell: bash
