@@ -28,7 +28,7 @@ runs:
         sbom_file=sbom.spdx
         sbom_path=${{ inputs.build-dir }}/${sbom_file}
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} \
-          "cd components/esp_io4edge && git for-each-ref refs/tags --format='%(refname:short) %(objecttype)' && cd ../.. && esp-idf-sbom create --rem-unused --rem-submodules --rem-config --file-tags -o ${sbom_path} ${{ inputs.build-dir }}/project_description.json"
+          "esp-idf-sbom create --rem-unused --rem-submodules --rem-config --file-tags -o ${sbom_path} ${{ inputs.build-dir }}/project_description.json"
         echo "sbom-path=${sbom_path}" >> $GITHUB_OUTPUT
         echo "sbom-file=${sbom_file}" >> $GITHUB_OUTPUT
 
