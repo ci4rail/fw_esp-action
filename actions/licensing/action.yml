@@ -21,6 +21,24 @@ inputs:
 runs:
   using: "composite"
   steps:
+   # Fail if a submodule's referenced commit has no annotated tag
+    - name: Require annotated tags on submodule commits
+      shell: bash
+      run: |
+        git submodule foreach --recursive '
+          set -eu
+          sha=$(git rev-parse --short=12 HEAD)
+
+          # Find annotated tags (objecttype=tag) pointing at HEAD
+          ann_tags=$(git for-each-ref --points-at=HEAD refs/tags --format="%(objecttype) %(refname:short)" \
+            | awk '"'"'$1=="tag"{print $2}'"'"')
+
+          if [ -z "$ann_tags" ]; then
+            echo "::error file=${path}::Submodule ${name} @ ${sha} has NO annotated tag pointing at this commit"
+            exit 1
+          fi
+          echo "✓ Submodule ${name} (${path}) @ ${sha} has annotated tag(s): ${ann_tags}"
+        ' 
     - name: Generate SBOM
       id: sbom
       shell: bash

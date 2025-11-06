@@ -102,6 +102,17 @@ jobs:
           submodules: "recursive"
           token: ${{ secrets.access-token }}
 
+      - name: Unshallow submodules and force-refresh tags
+        shell: bash
+        run: |
+          git submodule foreach --recursive '
+            # Unshallow if the submodule was fetched shallow
+            if git rev-parse --is-shallow-repository | grep -q true; then
+              git fetch --unshallow origin
+            fi
+            # Force-update tags to pick up rewritten (lightweight → annotated) tags
+            git fetch origin --tags --force --prune
+          '
       - name: Start esp-idf Devcontainer
         uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
 
@@ -113,7 +124,7 @@ jobs:
           build-dfu: ${{ inputs.build-dfu }}
 
       - name: Generate Licensing Info
-        uses: ci4rail/fw_esp-action/actions/licensing@v10
+        uses: ci4rail/fw_esp-action/actions/licensing@debug-sbom
         id: licensing
         with:
           build-dir: ${{ steps.build_app.outputs.build-dir }}
