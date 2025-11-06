@@ -113,7 +113,7 @@ jobs:
           build-dfu: ${{ inputs.build-dfu }}
 
       - name: Generate Licensing Info
-        uses: ci4rail/fw_esp-action/actions/licensing@v10
+        uses: ci4rail/fw_esp-action/actions/licensing@debug-sbom
         id: licensing
         with:
           build-dir: ${{ steps.build_app.outputs.build-dir }}
