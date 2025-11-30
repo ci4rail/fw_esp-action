@@ -2,6 +2,9 @@ name: "ESP Firmware Test Action"
 description: "Run test on a test station"
 
 inputs:
+  artifact-folder:
+    description: "Folder where the firmware package artifact is located"
+    required: true
   teststation-broker:
     description: "IP:Port of MQTT broker where test station listens to"
     required: true
@@ -48,7 +51,7 @@ runs:
     - name: Download firmware package
       uses: actions/download-artifact@v4
       with:
-        pattern: fwpkg-staging
+        pattern: ${{ inputs.artifact-folder }}/*.fwpkg
         path: ./artifacts
 
     - name: Upload to minio for testing
@@ -58,7 +61,7 @@ runs:
         access_key: ${{ inputs.minio-access-key }}
         secret_key: ${{ inputs.minio-secret-key }}
         bucket: ${{ inputs.minio-bucket }}
-        source_dir: ./artifacts/fwpkg-staging/
+        source_dir: ./artifacts/${{ inputs.artifact-folder }}/
         target_dir: "/"
 
     - name: Test firmware package for development

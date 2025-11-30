@@ -3,10 +3,6 @@ description: |
   Create a factory image (flashable binary)
   Expects the binaries in the build dir.
   Expects the flash_bootloader_args and flash_project_args files to be present in the build dir.
-
-  E.g. when app-file is called "fw-abc-default-1.0.10-staging.bin", the resulting factory 
-  image will be named according to the output-file input, e.g.
-                               "fw-abc-default-1.0.10-staging-factory.bin".
 inputs:
   output-file:
     description: "Output file name (e.g. my_project-1.0.0-staging-factory.bin)"
@@ -34,3 +30,8 @@ runs:
       shell: bash
       run: |
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ github.action_path }}/factory-merge.sh ${{ inputs.chip }} ${{ inputs.build-dir }} ${{ inputs.app-file }} ${{ inputs.bootloader-file-pattern }} ${{ inputs.output-file }}"
+
+outputs:
+  factory-image-file:
+    description: "Filename of the created factory image"
+    value: ${{ inputs.output-file }}

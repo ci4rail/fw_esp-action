@@ -4,7 +4,7 @@ set -o errexit   # abort on nonzero exitstatus
 set -o pipefail  # don't hide errors within pipes
 
 if [ "$#" -ne 6 ]; then
-  echo "Usage: ${0} <fw-binary> <full-hw-name> <fw-variant> <fw-version> <major-revs> <output-file-suffix>"
+  echo "Usage: ${0} <fw-binary> <full-hw-name> <fw-variant> <fw-version> <major-rev> <output-file-suffix>"
   exit 1
 fi
 
@@ -17,7 +17,7 @@ fw_binary=${1}
 full_hwname=${2}
 fw_variant=${3}
 fw_version=${4}
-major_revs="[${5}]"
+major_rev="[${5}]"
 output_file_suffix=${6}
 
 # strip away everything before first '-'
@@ -35,7 +35,7 @@ trap finish EXIT
 
 cp -a ${fw_binary} ${tmp_dir}/
 
-jq ".name = \"${short_hwname}-${fw_variant}\" | .version = \"${fw_version}\" | .file = \"${fw_binary_basename}\" | .compatibility.hw = \"${full_hwname}\" | .compatibility.major_revs = ${major_revs}" \
+jq ".name = \"${short_hwname}-${major_rev}-${fw_variant}${output_file_suffix}\" | .version = \"${fw_version}\" | .file = \"${fw_binary_basename}\" | .compatibility.hw = \"${full_hwname}\" | .compatibility.major_revs = ${major_rev}" \
 >${tmp_dir}/manifest.json \
 <<EOF
 {
@@ -51,7 +51,7 @@ EOF
 
 cat ${tmp_dir}/manifest.json
 
-pkg_name=fw-${short_hwname}-${fw_variant}-${fw_version}${output_file_suffix}.fwpkg
+pkg_name=fw-${short_hwname}--${major_rev}-${fw_variant}-${fw_version}${output_file_suffix}.fwpkg
 
 tar cf ${pkg_name} -C ${tmp_dir} . --owner=root --group=root
 

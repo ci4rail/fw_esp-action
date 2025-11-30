@@ -83,7 +83,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/secure_bootloader.yml@v10
+    uses: ci4rail/fw_esp-action/.github/workflows/secure_bootloader.yml@v11
     with:
       firmware_signing_azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
       firmware_signing_azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
@@ -103,7 +103,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/secure_app.yml@v10
+    uses: ci4rail/fw_esp-action/.github/workflows/secure_app.yml@v11
     with:
       firmware_signing_azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
       firmware_signing_azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
@@ -138,7 +138,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@v10
+    uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@v11
     with:
       teststation-broker: lizard-rpi:1883
       test-name: ""
