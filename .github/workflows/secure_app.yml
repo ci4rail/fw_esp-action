@@ -216,7 +216,7 @@ jobs:
           - name: production
         release_def: ${{ fromJson(inputs.release_defs) }}
 
-    name: ${{ matrix.env.name }} → ${{ matrix.release_def.name }}
+    name: package ${{ matrix.env.name }} → ${{ matrix.release_def.name }}
     outputs:
       dummy: ${{ steps.gen_outputs.outputs.dummy }}  # not really used
     environment: ${{ matrix.env.name }}
@@ -288,6 +288,7 @@ jobs:
         env: 
           - name: staging # only staging
         release_def: ${{ fromJson(inputs.release_defs) }}
+    name: test-staging → ${{ matrix.release_def.name }}
     environment: ${{ matrix.env.name }}
     steps:
       - name: get outputs from package job

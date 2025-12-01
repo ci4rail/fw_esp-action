@@ -37,7 +37,7 @@ runs:
           "${{ inputs.article-group }}-${{ inputs.hwname }}" \
           "${{ inputs.variant }}" \
           "${{ inputs.version }}" \
-          "${{ inputs.major-revision }  }" \
+          "${{ inputs.major-revision }}" \
           "${{ inputs.output-file-suffix }}"
 
 outputs:
