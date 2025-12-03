@@ -233,8 +233,8 @@ jobs:
       - name: get outputs from sign job
         id: get_package_outputs
         run: |
-          echo 'f={{ needs.sign.signed-binary-file_${{ matrix.env.name }} }}'
-          echo 'p={{ needs.sign.signed-binary-path_${{ matrix.env.name }} }}'
+          echo 'f=${{ needs.sign.signed-binary-file_${{ matrix.env.name }} }}'
+          echo 'p=${{ needs.sign.signed-binary-path_${{ matrix.env.name }} }}'
       # we need to checkout repo, as we need devcontainer.json
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -251,7 +251,7 @@ jobs:
           major-revision: ${{ matrix.release_def.major }}
           variant: ${{ inputs.firmware_variant }}
           output-file-suffix: "-${{ matrix.env.name }}"
-          app-binary: ${{ needs.sign.outputs.signed-binary-path }}
+          app-binary: ${{ needs.sign.outputs.signed-binary-path_${{ matrix.env.name }} }}
           version: ${{ needs.build.outputs.version }}
 
       - name: Download bootloader
