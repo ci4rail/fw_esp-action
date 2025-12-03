@@ -169,7 +169,10 @@ jobs:
           - name: staging
           - name: production
     outputs:
-      dummy: ${{ steps.gen_outputs.outputs.dummy }}  # not really used
+      signed-binary-file_staging: ${{ steps.gen_outputs.outputs.signed-binary-file_staging }}
+      signed-binary-path_staging: ${{ steps.gen_outputs.outputs.signed-binary-path_staging }}
+      signed-binary-file_production: ${{ steps.gen_outputs.outputs.signed-binary-file_production }}
+      signed-binary-path_production: ${{ steps.gen_outputs.outputs.signed-binary-path_production }}
     environment: ${{ matrix.env.name }}
     steps:
       # we need to checkout repo, as we need devcontainer.json
@@ -230,8 +233,8 @@ jobs:
       - name: get outputs from sign job
         id: get_package_outputs
         run: |
-          echo '${{ toJSON(needs.sign.outputs) }}'
-
+          echo 'f={{ needs.sign.signed-binary-file_${{ matrix.env.name }} }}'
+          echo 'p={{ needs.sign.signed-binary-path_${{ matrix.env.name }} }}'
       # we need to checkout repo, as we need devcontainer.json
       - name: Checkout repository
         uses: actions/checkout@v4
