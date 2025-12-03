@@ -168,11 +168,6 @@ jobs:
         env:
           - name: staging
           - name: production
-    outputs:
-      signed-binary-file_staging: ${{ steps.gen_outputs.outputs.signed-binary-file_staging }}
-      signed-binary-path_staging: ${{ steps.gen_outputs.outputs.signed-binary-path_staging }}
-      signed-binary-file_production: ${{ steps.gen_outputs.outputs.signed-binary-file_production }}
-      signed-binary-path_production: ${{ steps.gen_outputs.outputs.signed-binary-path_production }}
     environment: ${{ matrix.env.name }}
     steps:
       # we need to checkout repo, as we need devcontainer.json
@@ -207,10 +202,13 @@ jobs:
         with:
           binary: in/${{ needs.build.outputs.app-file }}
 
-      - id: gen_outputs
-        run: |
-          echo "signed-binary-file_${{ matrix.env.name }}=${{ steps.sign.outputs.signed-binary-file }}" >> $GITHUB_OUTPUT
-          echo "signed-binary-path_${{ matrix.env.name }}=${{ steps.sign.outputs.signed-binary-path }}" >> $GITHUB_OUTPUT
+      - name: Upload build outputs to artifact storage
+        uses: actions/upload-artifact@v4
+        with:
+          name: sign_output-${{ matrix.env.name }}
+          path: |
+            ${{ steps.sign.outputs.signed-binary-path }}
+
       - name: tear down devcontainer
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v11
@@ -233,14 +231,26 @@ jobs:
       - name: get outputs from sign job
         id: get_package_outputs
         run: |
-          echo 'f=${{ needs.sign.signed-binary-file_${{ matrix.env.name }} }}'
-          echo 'p=${{ needs.sign.signed-binary-path_${{ matrix.env.name }} }}'
+          echo 'f=${{ needs.sign.outputs.signed-binary-file }}'
+          echo 'p=${{ needs.sign.outputs.signed-binary-path }}'
       # we need to checkout repo, as we need devcontainer.json
       - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Start esp-idf Devcontainer
         uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v11
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: sign_output-${{ matrix.env.name }}
+          path: in/
+
+      - name: Get app binary path
+        id: get_app_binary
+        run: |
+          ls -l in/
+          app_binary_path=$(ls in/*.bin)
+          echo "app-binary-path=${app_binary_path}" >> $GITHUB_OUTPUT
 
       - name: Create firmware package
         id: create_fwpkg
@@ -251,7 +261,7 @@ jobs:
           major-revision: ${{ matrix.release_def.major }}
           variant: ${{ inputs.firmware_variant }}
           output-file-suffix: "-${{ matrix.env.name }}"
-          app-binary: ${{ needs.sign.outputs.signed-binary-path_${{ matrix.env.name }} }}
+          app-binary: ${{ steps.get_app_binary.outputs.app-binary-path }}
           version: ${{ needs.build.outputs.version }}
 
       - name: Download bootloader
@@ -269,7 +279,7 @@ jobs:
         with:
           chip: ${{ needs.build.outputs.chip }}
           build-dir: in/
-          app-file: ${{ steps.sign.outputs.signed-binary-file }}
+          app-file: ${{ needs.sign.outputs.signed-binary-file }}
           bootloader-file-pattern: "*bootloader*-${{ matrix.env.name }}.bin"
           output-file: fw-${{ matrix.release_def.hwname }}-${{ matrix.release_def.major }}-${{ inputs.firmware_variant }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
 
