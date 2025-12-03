@@ -17,7 +17,7 @@ fw_binary=${1}
 full_hwname=${2}
 fw_variant=${3}
 fw_version=${4}
-major_rev="[${5}]"
+major_rev=${5}
 output_file_suffix=${6}
 
 # strip away everything before first '-'

@@ -214,7 +214,7 @@ jobs:
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v11
 
   package:
-    needs: sign
+    needs: [build, sign]
     runs-on: [self-hosted, linux, x64]
     strategy:
       matrix:
@@ -228,11 +228,6 @@ jobs:
       dummy: ${{ steps.gen_outputs.outputs.dummy }}  # not really used
     environment: ${{ matrix.env.name }}
     steps:
-      - name: get outputs from sign job
-        id: get_package_outputs
-        run: |
-          echo 'f=${{ needs.sign.outputs.signed-binary-file }}'
-          echo 'p=${{ needs.sign.outputs.signed-binary-path }}'
       # we need to checkout repo, as we need devcontainer.json
       - name: Checkout repository
         uses: actions/checkout@v4
