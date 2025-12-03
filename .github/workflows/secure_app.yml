@@ -168,6 +168,8 @@ jobs:
         env:
           - name: staging
           - name: production
+    outputs:
+      dummy: ${{ steps.gen_outputs.outputs.dummy }}  # not really used
     environment: ${{ matrix.env.name }}
     steps:
       # we need to checkout repo, as we need devcontainer.json
@@ -202,6 +204,10 @@ jobs:
         with:
           binary: in/${{ needs.build.outputs.app-file }}
 
+      - id: gen_outputs
+        run: |
+          echo "signed-binary-file_${{ matrix.env.name }}=${{ steps.sign.outputs.signed-binary-file }}" >> $GITHUB_OUTPUT
+          echo "signed-binary-path_${{ matrix.env.name }}=${{ steps.sign.outputs.signed-binary-path }}" >> $GITHUB_OUTPUT
       - name: tear down devcontainer
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v11
@@ -221,6 +227,11 @@ jobs:
       dummy: ${{ steps.gen_outputs.outputs.dummy }}  # not really used
     environment: ${{ matrix.env.name }}
     steps:
+      - name: get outputs from sign job
+        id: get_package_outputs
+        run: |
+          echo '${{ toJSON(needs.sign.outputs) }}'
+
       # we need to checkout repo, as we need devcontainer.json
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -237,7 +248,7 @@ jobs:
           major-revision: ${{ matrix.release_def.major }}
           variant: ${{ inputs.firmware_variant }}
           output-file-suffix: "-${{ matrix.env.name }}"
-          app-binary: ${{ steps.sign.outputs.signed-binary-path }}
+          app-binary: ${{ needs.sign.outputs.signed-binary-path }}
           version: ${{ needs.build.outputs.version }}
 
       - name: Download bootloader
