@@ -189,6 +189,7 @@ jobs:
           access-token: ${{ secrets.access-token }}
           tailscale-key: ${{ secrets.tailscale-key }}
           project-name: ${{ needs.build.outputs.project-name }}
+          artifact-name: build_output
           version: ${{ needs.build.outputs.version }}
 
   release:

@@ -38,6 +38,10 @@ inputs:
   project-name:
     description: "Project name"
     required: true
+  artifact-name:
+    description: "artifact name to download fwpkg"
+    required: false
+    default: fwpkg-staging
   version:
     description: "Firmware version"
     required: true
@@ -48,7 +52,7 @@ runs:
     - name: Download firmware package
       uses: actions/download-artifact@v4
       with:
-        pattern: fwpkg-staging
+        pattern: ${{ inputs.artifact-name }}
         path: ./artifacts
 
     - name: Upload to minio for testing
@@ -58,7 +62,7 @@ runs:
         access_key: ${{ inputs.minio-access-key }}
         secret_key: ${{ inputs.minio-secret-key }}
         bucket: ${{ inputs.minio-bucket }}
-        source_dir: ./artifacts/fwpkg-staging/
+        source_dir: ./artifacts/${{ inputs.artifact-name }}/
         target_dir: "/"
 
     - name: Test firmware package for development
