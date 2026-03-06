@@ -62,7 +62,7 @@ runs:
         target_dir: "/"
 
     - name: Test firmware package for development
-      uses: ci4rail/teststation-action@v5
+      uses: ci4rail/teststation-action@v6
       with:
         pipeline-name: "${{ github.run_id }}"
         mqtt-broker-url: "${{ inputs.teststation-broker }}"
