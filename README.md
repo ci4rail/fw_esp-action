@@ -31,6 +31,11 @@ In both environments, you must have the following vars (not secrets) configured:
   * `FIRMWARE_SIGNING_AZURE_KEY_ID` - for secure app builds
   * `FIRMWARE_SIGNING_AZURE_KEY_IDS` - for secure bootloader builds
 
+If you opt in to fetching an HTTPS API certificate before build, you must also
+configure these repo vars:
+* `FIRMWARE_API_CERT_AZURE_APP_ID`
+* `FIRMWARE_API_CERT_AZURE_SECRET_ID` - Azure Key Vault secret ID in the form `https://<vault>.vault.azure.net/secrets/<name>`
+
 
 ## External services required
 
@@ -107,6 +112,8 @@ jobs:
     with:
       firmware_signing_azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
       firmware_signing_azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
+      fetch-api-cert: true
+      api-cert-output-prefix: path/to/api-cert
       teststation-broker: lizard-rpi:1883
       test-name: "sio06-all"
       test-device-name: "sio06-1"
@@ -140,6 +147,10 @@ jobs:
   ci:
     uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@v10
     with:
+      firmware_signing_azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
+      firmware_signing_azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
+      fetch-api-cert: true
+      api-cert-output-prefix: path/to/api-cert
       teststation-broker: lizard-rpi:1883
       test-name: ""
       test-device-name: "dummy-device"
@@ -153,3 +164,8 @@ jobs:
       tailscale-key: ${{ secrets.YODA_TAILSCALE_AUTHKEY }}
       minio-access-key: ${{ secrets.MINIO_ACCESS_KEY }}
       minio-secret-key: ${{ secrets.MINIO_SECRET_KEY }}
+```
+
+When enabled, the certificate fetch step runs before the devcontainer build and writes:
+* `<api-cert-output-prefix>.crt`
+* `<api-cert-output-prefix>.key`

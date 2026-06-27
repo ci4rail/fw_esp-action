@@ -9,6 +9,16 @@ on:
       firmware_signing_azure_tenant_id:
         required: true
         type: string
+      fetch-api-cert:
+        description: "Whether to fetch the HTTPS API certificate from Azure Key Vault before build"
+        required: false
+        type: boolean
+        default: false
+      api-cert-output-prefix:
+        description: "Filename prefix where the fetched certificate and key are written"
+        required: false
+        type: string
+        default: ""
       build-dfu:
         description: "Whether to build dfu binary"
         required: false
@@ -86,6 +96,9 @@ on:
 
 jobs:
   build:
+    permissions:
+      id-token: write
+      contents: read
     runs-on: [self-hosted, linux, x64]
 
     outputs:
@@ -113,6 +126,17 @@ jobs:
             # Force-update tags to pick up rewritten (lightweight → annotated) tags
             git fetch origin --tags --force --prune
           '
+
+      - name: Fetch API certificate
+        if: ${{ inputs.fetch-api-cert }}
+        uses: ci4rail/fw_esp-action/actions/azure_get_api_cert@v10
+        with:
+          azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
+          azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
+          azure_app_id: ${{ vars.FIRMWARE_API_CERT_AZURE_APP_ID }}
+          azure_secret_id: ${{ vars.FIRMWARE_API_CERT_AZURE_SECRET_ID }}
+          output_prefix: ${{ inputs.api-cert-output-prefix }}
+
       - name: Start esp-idf Devcontainer
         uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
 

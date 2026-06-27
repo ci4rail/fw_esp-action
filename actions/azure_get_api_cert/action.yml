@@ -1,0 +1,60 @@
+name: "Fetch API Certificate from Azure Key Vault"
+description: |
+  Fetch a base64 encoded PKCS#12 certificate bundle from Azure Key Vault,
+  extract the public certificate and private key, and write them to a
+  caller-provided filename prefix.
+
+inputs:
+  azure_subscription_id:
+    description: "The Azure subscription ID."
+    required: true
+  azure_tenant_id:
+    description: "The Azure tenant ID."
+    required: true
+  azure_app_id:
+    description: "The Azure app ID that has access to the Key Vault secret."
+    required: true
+  azure_secret_id:
+    description: "Azure Key Vault secret ID, e.g. https://<vault>.vault.azure.net/secrets/<name>"
+    required: true
+  output_prefix:
+    description: "Filename prefix for the extracted certificate and key."
+    required: true
+
+outputs:
+  cert-path:
+    description: "Path to the extracted certificate file."
+    value: ${{ steps.fetch.outputs.cert-path }}
+  key-path:
+    description: "Path to the extracted private key file."
+    value: ${{ steps.fetch.outputs.key-path }}
+
+runs:
+  using: "composite"
+  steps:
+    # self-hosted runner currently doesn't have az cli installed...
+    - name: Install AZ CLI
+      shell: bash
+      run: |
+        if ! command -v az &> /dev/null; then
+            echo "Azure CLI not found. Installing..." >&2
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+        else
+            echo "Azure CLI is already installed." >&2
+        fi
+
+    - name: Azure OIDC login
+      uses: azure/login@v2
+      with:
+        client-id: ${{ inputs.azure_app_id }}
+        tenant-id: ${{ inputs.azure_tenant_id }}
+        subscription-id: ${{ inputs.azure_subscription_id }}
+
+    - name: Fetch certificate and key
+      id: fetch
+      shell: bash
+      run: |
+        ${{ github.action_path }}/fetch-cert.sh \
+          "${{ inputs.azure_secret_id }}" \
+          "${{ inputs.output_prefix }}" \
+          "$GITHUB_OUTPUT"
