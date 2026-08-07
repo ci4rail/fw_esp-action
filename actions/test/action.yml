@@ -13,74 +13,66 @@ inputs:
     description: "Time in seconds to wait for teststation to become available"
     required: false
     default: "3600"
-  test-name:
-    description: |
-      Name of the test to execute (must match an entry in the test schedulers config file)
-    required: true
-  test-device-name:
-    description: "Device id as listed in test schedulers config file to run the test on test station"
-    required: true
-  minio-access-key:
-    description: "Access key for minio"
-    required: true
-  minio-secret-key:
-    description: "Secret key for minio"
-    required: true
-  minio-bucket:
-    description: "bucket on minio to push test images to"
-    required: true
   access-token:
     description: "Personal access token for private repos"
     required: true
   tailscale-key:
     description: "a reusable tailscale key"
     required: true
-  project-name:
-    description: "Project name"
-    required: true
   artifact-name:
     description: "artifact name to download fwpkg"
-    required: false
-    default: fwpkg-staging
-  version:
-    description: "Firmware version"
     required: true
-
+  requester-version:
+    description: "tag of requester to use"
+    required: false
+    default: "v4.4.0"
+  request-timeout:
+    description: "Time in seconds to wait for teststation to become available"
+    required: false
+    default: "3600"
+    
 runs:
   using: "composite"
   steps:
-    - name: Download firmware package
-      uses: actions/download-artifact@v4
+    # Add action's path so that scripts can be found
+    - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
+      shell: bash
+    - name: fetch requester
+      uses: dsaltares/fetch-gh-release-asset@master
       with:
-        pattern: ${{ inputs.artifact-name }}
-        path: ./artifacts
+        repo: "ci4rail/test-scheduler"
+        version: "tags/${{ inputs.requester-version }}"
+        file: "test-requester-${{ inputs.requester-version }}-linux-amd64.tar.gz"
+        token: ${{ inputs.access-token }}
+    - name: Tailscale
+      uses: tailscale/github-action@v1
+      with:
+        authkey: ${{ inputs.tailscale-key }}
+    - name: Run Test
+      id: run_test
+      shell: bash
+      continue-on-error: true  # continue on error to upload logs
+      run: |
+        generate-request.py "${{ inputs.pipeline-name }}" "${{ inputs.test-name }}" "${{ inputs.artifact-override }}" > request.json
+        cat request.json
+        tar xzf test-requester-${{ inputs.requester-version }}-linux-amd64.tar.gz test-requester
+        chmod +x test-requester && mv test-requester "${{ github.action_path }}"
 
-    - name: Upload to minio for testing
-      uses: hkdobrev/minio-deploy-action@v1.1
-      with:
-        endpoint: https://minio.ci4rail.com
-        access_key: ${{ inputs.minio-access-key }}
-        secret_key: ${{ inputs.minio-secret-key }}
-        bucket: ${{ inputs.minio-bucket }}
-        source_dir: ./artifacts/${{ inputs.artifact-name }}/
-        target_dir: "/"
+        timeout_sec=${{ inputs.request-timeout }}
+        set +e
+        set -o pipefail
 
-    - name: Test firmware package for development
-      uses: ci4rail/teststation-action@v6
-      with:
-        pipeline-name: "${{ github.run_id }}"
-        mqtt-broker-url: "${{ inputs.teststation-broker }}"
-        test-name: ${{ inputs.test-name }}
-        artifact-override: |
-          {
-            \"desired_versions.${{ inputs.test-device-name }}.name\": \"${{ inputs.project-name }}\",
-            \"desired_versions.${{ inputs.test-device-name }}.version\": \"${{ inputs.version }}\",
-            \"desired_versions.${{ inputs.test-device-name }}.source.type\": \"ci4rail-minio\",
-            \"desired_versions.${{ inputs.test-device-name }}.source.bucket\": \"${{ inputs.minio-bucket }}\",
-            \"desired_versions.${{ inputs.test-device-name }}.source.filetype\": \"fwpkg\"
-          }
-        access-token: ${{ inputs.access-token }}
-        tailscale-key: ${{ inputs.tailscale-key }}
-        request-timeout: ${{ inputs.teststation-request-timeout }}
-        minio_access_key: ${{ inputs.minio-access-key }}
-        minio_secret_key: ${{ inputs.minio-secret-key }}
+        test-requester -busytimeout ${timeout_sec} ${{ inputs.mqtt-broker-url }} ${{ inputs.master-topic }} request.json | tee output.txt; rc=$?;
+        set -e
+        if [[ $rc == 1 ]]; then
+          echo "ERROR Test Failed"
+        elif [[ $rc == 2 ]]; then
+          echo "ERROR Test Station Busy"
+        elif [[ $rc == 3 ]]; then
+          echo "ERROR Request Invalid"
+        else
+          echo "Test PASS"
+        fi
+        echo "EXIT_CODE=$rc" >> $GITHUB_ENV
+        exit $rc
+

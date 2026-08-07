@@ -114,17 +114,17 @@ jobs:
             git fetch origin --tags --force --prune
           '
       - name: Start esp-idf Devcontainer
-        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v12
 
       - name: Build App
         id: build_app
-        uses: ci4rail/fw_esp-action/actions/build_app@v10        
+        uses: ci4rail/fw_esp-action/actions/build_app@v12
         with:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
       - name: Generate Licensing Info
-        uses: ci4rail/fw_esp-action/actions/licensing@v10
+        uses: ci4rail/fw_esp-action/actions/licensing@v12
         id: licensing
         with:
           build-dir: ${{ steps.build_app.outputs.build-dir }}
@@ -146,7 +146,7 @@ jobs:
 
       - name: tear down devcontainer
         if: ${{ always() }}
-        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
 
   sign:
     needs: build
@@ -166,7 +166,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start esp-idf Devcontainer
-        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v10
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v12
 
       - uses: actions/download-artifact@v4
         with:
@@ -179,7 +179,7 @@ jobs:
 
       - name: Generate signature
         id: gen_signature
-        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v10
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v12
         with:
           binary: in/${{ needs.build.outputs.app-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
@@ -187,21 +187,20 @@ jobs:
           azure_app_id: ${{ vars.FIRMWARE_SIGNING_AZURE_APP_ID }}
           key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_ID }}
 
-      - name: Sign image with espsecure 
+      - name: Sign image with espsecure
         id: sign
-        uses: ci4rail/fw_esp-action/actions/esp_sign@v10
+        uses: ci4rail/fw_esp-action/actions/esp_sign@v12
         with:
           binary: in/${{ needs.build.outputs.app-file }}
 
       - name: Create firmware package
         id: create_fwpkg
-        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v10
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v12
         with:
           output-file-suffix: "-${{ matrix.env.name }}"
           app-binary: ${{ steps.sign.outputs.signed-binary-path }}
           project-name: ${{ needs.build.outputs.project-name }}
           version: ${{ needs.build.outputs.version }}
-
 
       - name: Download bootloader
         uses: robinraju/release-downloader@v1
@@ -213,7 +212,7 @@ jobs:
           out-file-path: in/
 
       - name: Build Merged Factory binary
-        uses: ci4rail/fw_esp-action/actions/factory_image@v10
+        uses: ci4rail/fw_esp-action/actions/factory_image@v12
         with:
           chip: ${{ needs.build.outputs.chip }}
           build-dir: in/
@@ -232,8 +231,7 @@ jobs:
 
       - name: tear down devcontainer
         if: ${{ always() }}
-        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v10
-
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
 
   # Execute steps in an github runner (not selfhosted)
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
@@ -243,11 +241,11 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        env: [staging]   # only staging
-    environment: ${{ matrix.env }}    
+        env: [staging] # only staging
+    environment: ${{ matrix.env }}
     steps:
       - name: Execute Test on Test station
-        uses: ci4rail/fw_esp-action/actions/test@v10
+        uses: ci4rail/fw_esp-action/actions/test@v12
         id: test
         with:
           teststation-broker: ${{ inputs.teststation-broker }}
@@ -294,7 +292,7 @@ jobs:
           ls -l build-artifacts
 
       - name: Create Release in this Repo
-        uses: ci4rail/fw_esp-action/actions/release@v10
+        uses: ci4rail/fw_esp-action/actions/release@v12
         with:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
@@ -302,10 +300,9 @@ jobs:
             fwpkg/in/*
             build-artifacts/${{ needs.build.outputs.licensing-info }}
 
-
       - name: Create Release in Public Repo
         if: ${{ inputs.public-release-repo != '' }}
-        uses: ci4rail/fw_esp-action/actions/release_public@v10
+        uses: ci4rail/fw_esp-action/actions/release_public@v12
         with:
           public-repo: ${{ inputs.public-release-repo }}
           assets: |
