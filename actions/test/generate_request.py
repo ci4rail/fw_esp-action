@@ -2,7 +2,7 @@
 import sys
 import json
 
-if len(sys.argv) != 8:
+if len(sys.argv) != 7:
     print(f"Usage: {sys.argv[0]} pipeline repo_owner repo artifact_id artifact_name artifact_revision")
     sys.exit(1)
 
@@ -21,5 +21,4 @@ req = {
 }
 
 print(json.dumps(req))
-
 
