@@ -27,6 +27,11 @@ on:
         required: false
         type: number
         default: 3600
+      test-environment:
+        description: "Newline-delimited KEY=VALUE entries to include in the test bundle"
+        required: false
+        type: string
+        default: ""
       target-commitish:
         description: "The commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Default: the repository's default branch (usually main)."
         type: string
@@ -189,6 +194,7 @@ jobs:
           access-token: ${{ secrets.access-token }}
           #project-name: ${{ needs.build.outputs.project-name }}
           artifact-name: build_output
+          test-environment: ${{ inputs.test-environment }}
           #version: ${{ needs.build.outputs.version }}
 
   release:

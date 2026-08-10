@@ -19,6 +19,10 @@ inputs:
   artifact-name:
     description: "artifact name to download fwpkg"
     required: true
+  test-environment:
+    description: "Newline-delimited KEY=VALUE entries to include in test-environment.env in the test bundle"
+    required: false
+    default: ""
   requester-version:
     description: "tag of requester to use"
     required: false
@@ -49,6 +53,8 @@ runs:
     - name: Generate test bundle
       # Generates pytest-bundle.zip
       shell: bash
+      env:
+        TEST_ENVIRONMENT: ${{ inputs.test-environment }}
       run: |
         mapfile -t downloaded_artifacts < <(find in -type f -printf '%P\n')
         shopt -s dotglob nullglob
@@ -82,6 +88,10 @@ runs:
         ls -lR build*
 
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
+        if [[ -n "$TEST_ENVIRONMENT" ]]; then
+          printf '%s\n' "$TEST_ENVIRONMENT" > test-environment.env
+          zip -q pytest-bundle.zip test-environment.env
+        fi
         unzip -l pytest-bundle.zip
 
     - name: Upload test bundle
