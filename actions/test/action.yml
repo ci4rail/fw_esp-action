@@ -65,6 +65,16 @@ runs:
             mv -- "$artifact_path" .
           fi
         done
+
+        # Test bundles use stable binary names, without the Git revision or version suffix.
+        for index in "${!downloaded_artifacts[@]}"; do
+          artifact=${downloaded_artifacts[$index]}
+          if [[ "$artifact" =~ ^(.*/)?(.+)-(([[:digit:]]+\.){2}[[:digit:]]+(-[[:alnum:].-]+)?|[[:xdigit:]]{7,40})(-factory)?\.bin$ ]]; then
+            renamed_artifact="${BASH_REMATCH[1]}${BASH_REMATCH[2]}${BASH_REMATCH[6]}.bin"
+            mv -- "$artifact" "$renamed_artifact"
+            downloaded_artifacts[$index]=$renamed_artifact
+          fi
+        done
         echo "Downloaded artifacts:"
         ls -lR build*
 
