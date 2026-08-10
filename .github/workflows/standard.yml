@@ -55,9 +55,6 @@ on:
       access-token:
         description: "Personal access token for private repos"
         required: true
-      tailscale-key:
-        description: "a reusable tailscale key"
-        required: true
 
 jobs:
   build:
@@ -172,7 +169,6 @@ jobs:
           teststation-master-topic: ${{ inputs.teststation-master-topic }}
           teststation-request-timeout: ${{ inputs.teststation-request-timeout }}
           access-token: ${{ secrets.access-token }}
-          tailscale-key: ${{ secrets.tailscale-key }}
           #project-name: ${{ needs.build.outputs.project-name }}
           artifact-name: build_output
           #version: ${{ needs.build.outputs.version }}
