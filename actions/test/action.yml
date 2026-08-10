@@ -56,7 +56,15 @@ runs:
         mapfile -t downloaded_artifacts < <(find in -type f -printf '%P\n')
         shopt -s dotglob nullglob
         ls -lR in
-        mv -- in/* .
+        for artifact_path in in/*; do
+          if [[ -d "$artifact_path" ]]; then
+            artifact_dir=${artifact_path#in/}
+            mkdir -p "$artifact_dir"
+            mv -- "$artifact_path"/* "$artifact_dir"/
+          else
+            mv -- "$artifact_path" .
+          fi
+        done
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
 
         for artifact in "${downloaded_artifacts[@]}"; do
