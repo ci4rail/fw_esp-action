@@ -65,6 +65,9 @@ runs:
             mv -- "$artifact_path" .
           fi
         done
+        echo "Downloaded artifacts:"
+        ls -lR build*
+
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
 
         for artifact in "${downloaded_artifacts[@]}"; do
