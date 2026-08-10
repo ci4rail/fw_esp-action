@@ -19,9 +19,6 @@ inputs:
   tailscale-key:
     description: "a reusable tailscale key"
     required: true
-  artifact-name:
-    description: "artifact name to download fwpkg"
-    required: true
   requester-version:
     description: "tag of requester to use"
     required: false

@@ -163,7 +163,7 @@ jobs:
   # Execute steps in an github runner (not selfhosted)
   # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test:
-    if: inputs.test-name != ''
+    if: inputs.teststation-broker != ''
     needs: [build]
     runs-on: ubuntu-latest
     steps:
