@@ -58,12 +58,6 @@ on:
       tailscale-key:
         description: "a reusable tailscale key"
         required: true
-      minio-access-key:
-        description: "Access key for minio"
-        required: true
-      minio-secret-key:
-        description: "Secret key for minio"
-        required: true
 
 jobs:
   build:
