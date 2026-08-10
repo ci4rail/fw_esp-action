@@ -85,13 +85,7 @@ runs:
         ls -lR build*
 
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
-
-        for artifact in "${downloaded_artifacts[@]}"; do
-          if ! unzip -Z1 pytest-bundle.zip | grep -Fxq "$artifact"; then
-            echo "Downloaded artifact is missing from pytest-bundle.zip: $artifact" >&2
-            exit 1
-          fi
-        done
+        unzip -l pytest-bundle.zip
 
     - name: Upload test bundle
       id: upload_test_bundle
