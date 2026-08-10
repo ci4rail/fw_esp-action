@@ -2,9 +2,10 @@
 
 # Arguments: 
 # $1: build-dfu
-# $2: project-name
+# $2: build-dir
+# $3: project-name
 
-if [ -z "$2" ]; then
+if [ -z "$3" ]; then
   echo "Error: too few arguments"
   exit 1
 fi
@@ -12,14 +13,14 @@ fi
 set -e
 
 build_dfu=$1
-project_name=$2
+build_dir=$2
+project_name=$3
 
 
 if [ "${build_dfu}" = "true" ]; then
     idf.py dfu
 fi
 
-build_dir=$(find . -maxdepth 1 -type d -name 'build*' -printf '%f\n' | sort | head -n1)
 echo ${build_dir}
 
 version=$(awk 'match($0,/PROJECT_VER=\\"[\.a-z0-9\-]+\\"/) { print substr($0,RSTART+14,RLENGTH-16)}' ${build_dir}/build.ninja)

@@ -11,6 +11,10 @@ inputs:
     description: "Whether to build dfu binary"
     required: false
     default: "false"
+  build-dir:
+    description: "Build directory (default: build)"
+    required: false
+    default: "build"
 
 runs:
   using: "composite"
@@ -22,7 +26,7 @@ runs:
         project=$(grep PKG_FIRMWARE_NAME fw-package.env | cut -f 2 -d =)
         echo "project=$(echo ${project})" >> $GITHUB_OUTPUT
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "${{ inputs.app-build-command }}"  
-        ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${project}"
+        ${{ github.action_path }}/post_build.sh "${{ inputs.build-dfu }}" "${{ inputs.build-dir }}" "${project}"
 
 outputs:
   project-name:
