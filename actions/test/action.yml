@@ -124,3 +124,7 @@ runs:
         fi
         echo "EXIT_CODE=$rc" >> $GITHUB_ENV
         exit $rc
+
+    - name: tear down devcontainer
+      if: ${{ always() }}
+      uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
