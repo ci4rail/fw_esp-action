@@ -224,10 +224,10 @@ jobs:
         with:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
-            build-artifacts/${{ needs.build.outputs.app-file }}
-            build-artifacts/${{ needs.build.outputs.fwpkg }}
-            build-artifacts/${{ needs.build.outputs.factory-file }}
-            build-artifacts/${{ needs.build.outputs.licensing-info }}
+            build-artifacts/build/${{ needs.build.outputs.app-file }}
+            build-artifacts/build/${{ needs.build.outputs.fwpkg }}
+            build-artifacts/build/${{ needs.build.outputs.factory-file }}
+            build-artifacts/build/${{ needs.build.outputs.licensing-info }}
 
       - name: Create Release in Public Repo
         if: ${{ inputs.public-release-repo != '' }}
@@ -235,7 +235,7 @@ jobs:
         with:
           public-repo: ${{ inputs.public-release-repo }}
           assets: |
-            build-artifacts/${{ needs.build.outputs.app-file }}
-            build-artifacts/${{ needs.build.outputs.fwpkg }}
-            build-artifacts/${{ needs.build.outputs.licensing-info }}
+            build-artifacts/build/${{ needs.build.outputs.app-file }}
+            build-artifacts/build/${{ needs.build.outputs.fwpkg }}
+            build-artifacts/build/${{ needs.build.outputs.licensing-info }}
           access-token: ${{ secrets.access-token }}

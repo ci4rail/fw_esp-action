@@ -88,6 +88,8 @@ runs:
         ls -lR build*
 
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
+
+        # Pass the test environment to the test bundle, if provided.
         if [[ -n "$TEST_ENVIRONMENT" ]]; then
           printf '%s\n' "$TEST_ENVIRONMENT" > test-environment.env
           zip -q pytest-bundle.zip test-environment.env
