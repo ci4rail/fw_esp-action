@@ -56,7 +56,7 @@ runs:
         mapfile -t downloaded_artifacts < <(find in -type f -printf '%P\n')
         shopt -s dotglob nullglob
         mv -- in/* .
-        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} make pytest-bundle
+        ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
 
         for artifact in "${downloaded_artifacts[@]}"; do
           if ! unzip -Z1 pytest-bundle.zip | grep -Fxq "$artifact"; then
