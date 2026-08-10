@@ -55,6 +55,7 @@ runs:
       run: |
         mapfile -t downloaded_artifacts < <(find in -type f -printf '%P\n')
         shopt -s dotglob nullglob
+        ls -lR in
         mv -- in/* .
         ${{ github.action_path }}/../run_in_devcontainer/run.sh ${{ github.run_id }} "make pytest-bundle"
 
