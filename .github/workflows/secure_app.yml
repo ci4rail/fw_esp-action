@@ -258,12 +258,12 @@ jobs:
       - name: Stage firmware packages for artifact storage
         shell: bash
         run: |
-          mkdir -p artifact/in
+          mkdir -p artifact
           cp -- "${{ steps.create_fwpkg.outputs.fwpkg }}" artifact/
-          cp -a -- in/build-secure artifact/in/
+          cp -a -- in/build-secure artifact/
 
           if [[ "${{ inputs.build-appv2 }}" == "true" && "${{ matrix.env.name }}" == "staging" ]]; then
-            cp -a -- in/build-secure_appv2 artifact/in/
+            cp -a -- in/build-secure_appv2 artifact/
           fi
 
       - name: Upload firmware packages to artifact storage
@@ -329,7 +329,7 @@ jobs:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
             fwpkg/*
-            fwpkg/in/build-secure/*factory.bin
+            fwpkg/build-secure/*factory.bin
             build-artifacts/${{ needs.build.outputs.licensing-info }}
 
       - name: Create Release in Public Repo
