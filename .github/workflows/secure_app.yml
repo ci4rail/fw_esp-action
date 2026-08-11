@@ -14,6 +14,11 @@ on:
         required: false
         type: boolean
         default: false
+      build-appv2:
+        description: "Whether to build appv2"
+        required: false
+        type: boolean
+        default: false
       teststation-broker:
         description: "IP:Port of MQTT broker where test station listens to"
         type: string
@@ -28,26 +33,16 @@ on:
         required: false
         type: number
         default: 3600
-      test-name:
-        description: |
-          Name of the test to execute (must match an entry in the test schedulers config file)
-          If empty, skip test execution
+      test-environment:
+        description: "Newline-delimited KEY=VALUE entries to include in the test bundle"
+        required: false
         type: string
-        required: true
-      test-device-name:
-        description: "Device id as listed in test schedulers config file to run the test on test station"
-        type: string
-        required: true
+        default: ""
       target-commitish:
         description: "The commitish value that determines where the Git tag is created from. Can be any branch or commit SHA. Default: the repository's default branch (usually main)."
         type: string
         required: false
         default: ""
-      minio-bucket:
-        description: "bucket on minio to push test images to"
-        type: string
-        required: false
-        default: "esp-fw-testing"
       bootloader-repo:
         description: "Repository where to get bootloader from"
         type: string
@@ -74,15 +69,6 @@ on:
       access-token:
         description: "Personal access token for private repos"
         required: true
-      tailscale-key:
-        description: "a reusable tailscale key"
-        required: true
-      minio-access-key:
-        description: "Access key for minio"
-        required: true
-      minio-secret-key:
-        description: "Secret key for minio"
-        required: true
 
 jobs:
   build:
@@ -92,6 +78,7 @@ jobs:
       project-name: ${{ steps.build_app.outputs.project-name }}
       version: ${{ steps.build_app.outputs.version }}
       app-file: ${{ steps.build_app.outputs.app-file }}
+      appv2-file: ${{ steps.build_appv2.outputs.app-file }}
       chip: ${{ steps.build_app.outputs.chip }}
       licensing-info: ${{ steps.licensing.outputs.licensing-info-file }}
 
@@ -123,6 +110,14 @@ jobs:
           app-build-command: make build-secure
           build-dfu: ${{ inputs.build-dfu }}
 
+      - name: Build Appv2
+        if: ${{ inputs.build-appv2 == true }}
+        id: build_appv2
+        uses: ci4rail/fw_esp-action/actions/build_app@v12
+        with:
+          app-build-command: make build-secure-appv2
+          build-dir: build_appv2
+
       - name: Generate Licensing Info
         uses: ci4rail/fw_esp-action/actions/licensing@v12
         id: licensing
@@ -133,16 +128,37 @@ jobs:
           license-contact: ${{ inputs.license-contact }}
           company: ${{ inputs.company }}
 
+      - name: Stage build outputs
+        shell: bash
+        run: |
+          stage_build() {
+            local build_dir="$1"
+            local app_file="$2"
+            local stage_dir="artifact/$build_dir"
+
+            mkdir -p "$stage_dir/partition_table"
+            cp -- "$build_dir/$app_file" "$stage_dir/"
+            cp -- "$build_dir/project_description.json" "$stage_dir/"
+            cp -- "$build_dir/partition_table/partition-table.bin" "$stage_dir/partition_table/"
+            cp -- "$build_dir/ota_data_initial.bin" "$stage_dir/"
+            cp -- "$build_dir/flash_bootloader_args" "$stage_dir/"
+            cp -- "$build_dir/flash_project_args" "$stage_dir/"
+          }
+
+          stage_build "${{ steps.build_app.outputs.build-dir }}" "${{ steps.build_app.outputs.app-file }}"
+
+          appv2_file="${{ steps.build_appv2.outputs.app-file }}"
+          if [[ -n "$appv2_file" ]]; then
+            stage_build "${{ steps.build_appv2.outputs.build-dir }}" "$appv2_file"
+          fi
+
+          cp -- "${{ steps.licensing.outputs.licensing-info-path }}" artifact/
+
       - name: Upload build outputs to artifact storage
         uses: actions/upload-artifact@v4
         with:
           name: build_output
-          path: |
-            ${{ steps.build_app.outputs.app-file-path }}
-            ${{ steps.build_app.outputs.build-dir}}/partition_table/partition-table.bin
-            ${{ steps.build_app.outputs.build-dir}}/ota_data_initial.bin
-            ${{ steps.build_app.outputs.build-dir}}/flash_project_args
-            ${{ steps.licensing.outputs.licensing-info-path }}
+          path: artifact/
 
       - name: tear down devcontainer
         if: ${{ always() }}
@@ -181,7 +197,7 @@ jobs:
         id: gen_signature
         uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v12
         with:
-          binary: in/${{ needs.build.outputs.app-file }}
+          binary: in/build/${{ needs.build.outputs.app-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
           azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
           azure_app_id: ${{ vars.FIRMWARE_SIGNING_AZURE_APP_ID }}
@@ -191,7 +207,25 @@ jobs:
         id: sign
         uses: ci4rail/fw_esp-action/actions/esp_sign@v12
         with:
-          binary: in/${{ needs.build.outputs.app-file }}
+          binary: in/build/${{ needs.build.outputs.app-file }}
+
+      - name: Generate appv2 signature
+        if: ${{ inputs.build-appv2 == true && matrix.env.name == 'staging' }}
+        id: gen_signature_appv2
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v12
+        with:
+          binary: in/build_appv2/${{ needs.build.outputs.appv2-file }}
+          azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
+          azure_tenant_id: ${{ inputs.firmware_signing_azure_tenant_id }}
+          azure_app_id: ${{ vars.FIRMWARE_SIGNING_AZURE_APP_ID }}
+          key_ids: ${{ vars.FIRMWARE_SIGNING_AZURE_KEY_ID }}
+
+      - name: Sign appv2 image with espsecure
+        if: ${{ inputs.build-appv2 == true && matrix.env.name == 'staging' }}
+        id: sign_appv2
+        uses: ci4rail/fw_esp-action/actions/esp_sign@v12
+        with:
+          binary: in/build_appv2/${{ needs.build.outputs.appv2-file }}
 
       - name: Create firmware package
         id: create_fwpkg
@@ -209,40 +243,43 @@ jobs:
           tag: ${{ inputs.bootloader-release-tag }}
           token: ${{ secrets.access-token }}
           fileName: "*"
-          out-file-path: in/
+          out-file-path: in/build/
 
       - name: Build Merged Factory binary
         uses: ci4rail/fw_esp-action/actions/factory_image@v12
         with:
           chip: ${{ needs.build.outputs.chip }}
-          build-dir: in/
+          build-dir: in/build/
           app-file: ${{ steps.sign.outputs.signed-binary-file }}
           bootloader-file-pattern: "*bootloader*-${{ matrix.env.name }}.bin"
           output-file: ${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
+
+      - name: Stage firmware packages for artifact storage
+        shell: bash
+        run: |
+          mkdir -p artifact/in
+          cp -- "${{ steps.create_fwpkg.outputs.fwpkg }}" artifact/
+          cp -a -- in/build artifact/in/
+
+          if [[ "${{ inputs.build-appv2 }}" == "true" && "${{ matrix.env.name }}" == "staging" ]]; then
+            cp -a -- in/build_appv2 artifact/in/
+          fi
 
       - name: Upload firmware packages to artifact storage
         uses: actions/upload-artifact@v4
         with:
           name: fwpkg-${{ matrix.env.name }}
-          path: |
-            ${{ steps.create_fwpkg.outputs.fwpkg }}
-            in/${{ needs.build.outputs.project-name }}-${{ needs.build.outputs.version }}-${{ matrix.env.name }}-factory.bin
+          path: artifact/
           retention-days: 2
 
       - name: tear down devcontainer
         if: ${{ always() }}
         uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
 
-  # Execute steps in an github runner (not selfhosted)
-  # Furthermore, teststation-action uses tailscale to access test stations, which won't run in selfhosted dind runner
   test-staging:
-    if: inputs.test-name != ''
+    if: inputs.teststation-broker != ''
     needs: [build, sign]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        env: [staging] # only staging
-    environment: ${{ matrix.env }}
+    runs-on: [self-hosted, linux, x64]
     steps:
       - name: Execute Test on Test station
         uses: ci4rail/fw_esp-action/actions/test@v12
@@ -251,15 +288,9 @@ jobs:
           teststation-broker: ${{ inputs.teststation-broker }}
           teststation-master-topic: ${{ inputs.teststation-master-topic }}
           teststation-request-timeout: ${{ inputs.teststation-request-timeout }}
-          test-name: ${{ inputs.test-name }}
-          test-device-name: ${{ inputs.test-device-name }}
-          minio-access-key: ${{ secrets.minio-access-key }}
-          minio-secret-key: ${{ secrets.minio-secret-key }}
-          minio-bucket: ${{ inputs.minio-bucket }}
           access-token: ${{ secrets.access-token }}
-          tailscale-key: ${{ secrets.tailscale-key }}
-          project-name: ${{ needs.build.outputs.project-name }}
-          version: ${{ needs.build.outputs.version }}
+          artifact-name: fwpkg-staging
+          test-environment: ${{ inputs.test-environment }}
 
   release:
     needs: [build, sign, test-staging]
@@ -297,7 +328,7 @@ jobs:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
             fwpkg/*
-            fwpkg/in/*
+            fwpkg/in/build/*factory.bin
             build-artifacts/${{ needs.build.outputs.licensing-info }}
 
       - name: Create Release in Public Repo
