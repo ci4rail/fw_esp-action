@@ -72,6 +72,10 @@ runs:
         # Test bundles use stable binary names, without the Git revision or version suffix.
         for index in "${!downloaded_artifacts[@]}"; do
           artifact=${downloaded_artifacts[$index]}
+          # Signing sidecars are named <firmware>.bin-signature-N.  Only rename
+          # actual firmware images; otherwise a signature can overwrite the
+          # corresponding stable .bin name.
+          [[ "$artifact" == *.bin ]] || continue
           artifact_stem=${artifact%.bin}
           factory_suffix=""
           if [[ "$artifact_stem" == *-factory ]]; then
