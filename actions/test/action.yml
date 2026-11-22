@@ -42,7 +42,7 @@ runs:
         token: ${{ inputs.access-token }}
 
     - name: Start esp-idf Devcontainer
-      uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v12
+      uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v13
 
     - name: Download artifact
       uses: actions/download-artifact@v4
@@ -161,4 +161,4 @@ runs:
 
     - name: tear down devcontainer
       if: ${{ always() }}
-      uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
+      uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v13

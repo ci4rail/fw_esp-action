@@ -93,11 +93,11 @@ jobs:
           '
 
       - name: Start esp-idf Devcontainer
-        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v12
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v13
 
       - name: Build App
         id: build_app
-        uses: ci4rail/fw_esp-action/actions/build_app@v12
+        uses: ci4rail/fw_esp-action/actions/build_app@v13
         with:
           app-build-command: make build
           build-dfu: ${{ inputs.build-dfu == true }}
@@ -105,14 +105,14 @@ jobs:
       - name: Build Appv2
         if: ${{ inputs.build-appv2 == true }}
         id: build_appv2
-        uses: ci4rail/fw_esp-action/actions/build_app@v12
+        uses: ci4rail/fw_esp-action/actions/build_app@v13
         with:
           app-build-command: make build_appv2
           build-dir: build_appv2
 
       - name: Generate Licensing Info
         if: ${{ inputs.generate-licensing-info == true }}
-        uses: ci4rail/fw_esp-action/actions/licensing@v12
+        uses: ci4rail/fw_esp-action/actions/licensing@v13
         id: licensing
         with:
           build-dir: ${{ steps.build_app.outputs.build-dir }}
@@ -123,7 +123,7 @@ jobs:
 
       - name: Create firmware package
         id: create_fwpkg
-        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v12
+        uses: ci4rail/fw_esp-action/actions/create_firmware_package@v13
         with:
           output-file-suffix: ""
           app-binary: ${{ steps.build_app.outputs.app-file-path }}
@@ -136,7 +136,7 @@ jobs:
           mv ${{ steps.create_fwpkg.outputs.fwpkg }} ${{ steps.build_app.outputs.build-dir }}/
 
       - name: Build Merged Factory binary
-        uses: ci4rail/fw_esp-action/actions/factory_image@v12
+        uses: ci4rail/fw_esp-action/actions/factory_image@v13
         with:
           chip: ${{ steps.build_app.outputs.chip }}
           build-dir: ${{ steps.build_app.outputs.build-dir }}
@@ -177,7 +177,7 @@ jobs:
 
       - name: tear down devcontainer
         if: ${{ always() }}
-        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v13
 
   test:
     if: inputs.teststation-broker != ''
@@ -185,7 +185,7 @@ jobs:
     runs-on: [self-hosted, linux, x64]
     steps:
       - name: Execute Test on Test station
-        uses: ci4rail/fw_esp-action/actions/test@v12
+        uses: ci4rail/fw_esp-action/actions/test@v13
         id: test
         with:
           teststation-broker: ${{ inputs.teststation-broker }}
@@ -220,7 +220,7 @@ jobs:
           ls -lR build-artifacts
 
       - name: Create Release in this Repo
-        uses: ci4rail/fw_esp-action/actions/release@v12
+        uses: ci4rail/fw_esp-action/actions/release@v13
         with:
           target_commitish: ${{ inputs.target-commitish }}
           assets: |
@@ -231,7 +231,7 @@ jobs:
 
       - name: Create Release in Public Repo
         if: ${{ inputs.public-release-repo != '' }}
-        uses: ci4rail/fw_esp-action/actions/release_public@v12
+        uses: ci4rail/fw_esp-action/actions/release_public@v13
         with:
           public-repo: ${{ inputs.public-release-repo }}
           assets: |

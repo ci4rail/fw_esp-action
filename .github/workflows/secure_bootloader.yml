@@ -24,11 +24,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start esp-idf Devcontainer
-        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v12
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v13
 
       - name: Build Bootloader
         id: build_bootloader
-        uses: ci4rail/fw_esp-action/actions/build_bootloader@v12
+        uses: ci4rail/fw_esp-action/actions/build_bootloader@v13
 
       - name: Upload build outputs to artifact storage
         uses: actions/upload-artifact@v4
@@ -40,7 +40,7 @@ jobs:
 
       - name: tear down devcontainer
         if: ${{ always() }}
-        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v13
 
   sign:
     needs: build
@@ -60,7 +60,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Start esp-idf Devcontainer
-        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v12
+        uses: ci4rail/fw_esp-action/actions/setup_devcontainer@v13
 
       - uses: actions/download-artifact@v4
         with:
@@ -69,7 +69,7 @@ jobs:
 
       - name: Generate signature
         id: gen_signature
-        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v12
+        uses: ci4rail/fw_esp-action/actions/azure_key_vault_sign@v13
         with:
           binary: in/${{ needs.build.outputs.bootloader-file }}
           azure_subscription_id: ${{ inputs.firmware_signing_azure_subscription_id }}
@@ -79,7 +79,7 @@ jobs:
 
       - name: Sign image with espsecure
         id: sign
-        uses: ci4rail/fw_esp-action/actions/esp_sign@v12
+        uses: ci4rail/fw_esp-action/actions/esp_sign@v13
         with:
           binary: in/${{ needs.build.outputs.bootloader-file }}
 
@@ -102,7 +102,7 @@ jobs:
 
       - name: tear down devcontainer
         if: ${{ always() }}
-        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v12
+        uses: ci4rail/fw_esp-action/actions/teardown_devcontainer@v13
 
   release:
     needs: [build, sign]
@@ -126,7 +126,7 @@ jobs:
         run: ls -l artifacts
 
       - name: Create Release in this Repo
-        uses: ci4rail/fw_esp-action/actions/release@v12
+        uses: ci4rail/fw_esp-action/actions/release@v13
         with:
           assets: |
             artifacts/*

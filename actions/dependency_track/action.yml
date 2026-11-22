@@ -1,0 +1,39 @@
+name: "Publish SBOM to Dependency-Track"
+description: |
+  Upload a CycloneDX SBOM to Dependency-Track, carry forward the audit decisions of the
+  previous project version and apply the VEX statements contained in the SBOM.
+  Writes dtrack-bom-response.json and dtrack-audit-report.json to the working directory.
+
+inputs:
+  sbom-file:
+    description: "Path to the CycloneDX JSON SBOM"
+    required: true
+  url:
+    description: "Base URL of the Dependency-Track server (without /api)"
+    required: true
+  api-key:
+    description: "Dependency-Track API key (BOM_UPLOAD, PROJECT_CREATION_UPLOAD, VIEW_PORTFOLIO, VULNERABILITY_ANALYSIS)"
+    required: true
+  project-name:
+    description: "Dependency-Track project name"
+    required: true
+  project-version:
+    description: "Dependency-Track project version"
+    required: true
+  classifier:
+    description: "Dependency-Track project classifier"
+    required: false
+    default: "FIRMWARE"
+
+runs:
+  using: "composite"
+  steps:
+    - name: Publish SBOM and carry forward audit decisions
+      shell: bash
+      env:
+        DEPENDENCY_TRACK_URL: ${{ inputs.url }}
+        DEPENDENCY_TRACK_API_KEY: ${{ inputs.api-key }}
+        DEPENDENCY_TRACK_PROJECT_NAME: ${{ inputs.project-name }}
+        DEPENDENCY_TRACK_PROJECT_VERSION: ${{ inputs.project-version }}
+        DEPENDENCY_TRACK_CLASSIFIER: ${{ inputs.classifier }}
+      run: python3 "${{ github.action_path }}/dependency_track.py" "${{ inputs.sbom-file }}"

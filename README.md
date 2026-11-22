@@ -19,6 +19,19 @@ In the repo using this actions you must have
 
 To create correct SBOM, you should have sbom.yml manifests in the top level and in each component folder.
 
+If the repo has a `CHANGELOG.md` in its top level, the release in the public repo (`public-release-repo`) commits it to
+the default branch of the public repo and attaches it to the release.
+
+### Dependency-Track (secure app only)
+
+With `publish-sbom: true`, `secure_app.yml` builds a CycloneDX SBOM (`sbom.cdx.json` in the `build_output` artifact)
+on every run. On tags, after a successful release, it uploads the SBOM to Dependency-Track (project name from
+`fw-package.env`, version = tag), copies the audit decisions of the previous version and applies the VEX statements
+in the SBOM (`actions/dependency_track`). Requirements:
+
+* repo or org variable `DEPENDENCY_TRACK_URL`
+* secret passed as `dependency-track-api-key`
+
 ### Repo Environments
 
 For secure workflows, you must have the following environments configured in your repo:
@@ -83,7 +96,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/secure_bootloader.yml@v12
+    uses: ci4rail/fw_esp-action/.github/workflows/secure_bootloader.yml@v13
     with:
       firmware_signing_azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
       firmware_signing_azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
@@ -103,7 +116,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/secure_app.yml@v12
+    uses: ci4rail/fw_esp-action/.github/workflows/secure_app.yml@v13
     with:
       firmware_signing_azure_subscription_id: ${{ vars.FIRMWARE_SIGNING_AZURE_SUBSCRIPTION_ID }}
       firmware_signing_azure_tenant_id: ${{ vars.FIRMWARE_SIGNING_AZURE_TENANT_ID }}
@@ -116,11 +129,10 @@ jobs:
       license-contact: "info@ci4rail.com"
       company: "Ci4rail GmbH"
       public-release-repo: "ci4rail/fw_sio06_01_default_releases"
+      publish-sbom: true
     secrets:
       access-token: ${{ secrets.FW_CI_TOKEN }}
-      tailscale-key: ${{ secrets.YODA_TAILSCALE_AUTHKEY }}
-      minio-access-key: ${{ secrets.MINIO_ACCESS_KEY }}
-      minio-secret-key: ${{ secrets.MINIO_SECRET_KEY }}
+      dependency-track-api-key: ${{ secrets.DEPENDENCY_TRACK_API_KEY }}
 ```
 
 ### Standard App example
@@ -138,7 +150,7 @@ on:
 
 jobs:
   ci:
-    uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@v12
+    uses: ci4rail/fw_esp-action/.github/workflows/standard.yml@v13
     with:
       teststation-broker: lizard-rpi:1883
       test-name: ""

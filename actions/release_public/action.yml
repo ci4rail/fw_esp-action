@@ -1,18 +1,24 @@
 name: "Generate Github Release in Public Repository"
 description: |
   Create a new GitHub release for the firmware package in the specified repository
-  Using the same release notes as in the private repository
+  Using the same release notes as in the private repository.
+  If the changelog file exists, it is committed to the default branch of the public repository
+  (before the release is created, so the release tag contains it) and attached to the release.
 
 inputs:
   public-repo:
     description: "The public repository to release the firmware package"
     required: true
-  assets: 
+  assets:
     description: assets to include in the release, separated by newline
     required: true
   access-token:
     description: "Personal access token for the public repository"
     required: true
+  changelog:
+    description: "Changelog file to publish (relative to the workspace). Skipped if the file doesn't exist or is empty."
+    required: false
+    default: "CHANGELOG.md"
 
 runs:
   using: "composite"
@@ -28,10 +34,53 @@ runs:
       env:
         GH_TOKEN: ${{ github.token }}
 
+    - name: Commit changelog to public repo
+      shell: bash
+      id: changelog
+      env:
+        GH_TOKEN: ${{ inputs.access-token }}
+        PUBLIC_REPO: ${{ inputs.public-repo }}
+        CHANGELOG: ${{ inputs.changelog }}
+        ASSETS: ${{ inputs.assets }}
+        TAG: ${{ github.ref_name }}
+      run: |
+        set -euo pipefail
+        files="${{ github.workspace }}-RELFILES.txt"
+        printf '%s\n' "$ASSETS" > "$files"
+
+        if [[ -z "$CHANGELOG" || ! -s "$CHANGELOG" ]]; then
+          echo "No changelog '$CHANGELOG', skipping"
+        else
+          name=$(basename -- "$CHANGELOG")
+          # blob sha of the file on the default branch (needed to update it), empty if it doesn't exist yet
+          sha=$(gh api "repos/$PUBLIC_REPO/contents/$name" --jq .sha 2>/dev/null || true)
+          args=(-X PUT "repos/$PUBLIC_REPO/contents/$name"
+                -f "message=Update $name for $TAG"
+                -f "content=$(base64 -w0 -- "$CHANGELOG")")
+          if [[ "$sha" == "$(git hash-object -- "$CHANGELOG")" ]]; then
+            echo "$name in $PUBLIC_REPO is up to date"
+          else
+            if [[ -n "$sha" ]]; then
+              args+=(-f "sha=$sha")
+            fi
+            gh api "${args[@]}" --jq '.commit.html_url'
+          fi
+          echo "$CHANGELOG" >> "$files"
+        fi
+
+        sed -i '/^[[:space:]]*$/d' "$files"
+        echo "Release assets:"
+        cat "$files"
+        {
+          echo "files<<EOF_RELFILES"
+          cat "$files"
+          echo "EOF_RELFILES"
+        } >> "$GITHUB_OUTPUT"
+
     - name: Release in public repo
       uses: softprops/action-gh-release@v2
       with:
         body_path: ${{ github.workspace }}-RELNOTES.md
-        files: ${{ inputs.assets }}
+        files: ${{ steps.changelog.outputs.files }}
         repository: ${{ inputs.public-repo }}
         token: ${{ inputs.access-token }}
