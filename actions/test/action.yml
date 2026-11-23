@@ -107,6 +107,35 @@ runs:
         name: test-bundle
         path: pytest-bundle.zip
 
+    # The test station looks the artifact up via the GitHub API as soon as it gets the request.
+    # Right after the upload, that lookup can still return 404, and the test station then
+    # rejects the request. Wait until the API returns the artifact.
+    - name: Wait for test bundle to become visible
+      shell: bash
+      env:
+        GH_TOKEN: ${{ inputs.access-token }}
+        ARTIFACT_URL: ${{ github.api_url }}/repos/${{ github.repository }}/actions/artifacts/${{ steps.upload_test_bundle.outputs.artifact-id }}
+      run: |
+        deadline=$((SECONDS + 120))
+        while :; do
+          status=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "Accept: application/vnd.github+json" \
+            "$ARTIFACT_URL") || status=000
+          if [[ $status == 200 ]]; then
+            echo "Test bundle artifact is visible"
+            break
+          fi
+          if (( SECONDS >= deadline )); then
+            echo "::warning::Test bundle artifact still not visible (HTTP $status), sending the request anyway"
+            break
+          fi
+          echo "Test bundle artifact not visible yet (HTTP $status), retrying"
+          sleep 5
+        done
+        # The test station uses a different token, give the API a little more time.
+        sleep 10
+
     # Add action's path so that scripts can be found
     - run: echo "${{ github.action_path }}" >> $GITHUB_PATH
       shell: bash
